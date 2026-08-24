@@ -86,13 +86,6 @@ const stats = [
   },
 ];
 
-function getDocumentIcon(type: string) {
-  if (type === "URL") {
-    return Globe;
-  }
-
-  return FileText;
-}
 
 function getStatusBadge(status: string) {
   if (status === "Ready") {
@@ -101,7 +94,7 @@ function getStatusBadge(status: string) {
         variant="secondary"
         className="gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-50"
       >
-        <CheckCircle2 className="size-3" />
+        {/* <CheckCircle2 className="size-3" /> */}
         Ready
       </Badge>
     );
@@ -112,7 +105,7 @@ function getStatusBadge(status: string) {
       variant="secondary"
       className="gap-1 bg-amber-50 text-amber-700 hover:bg-amber-50"
     >
-      <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+      {/* <span className="size-1.5 animate-pulse rounded-full bg-amber-500" /> */}
       Processing
     </Badge>
   );
@@ -125,8 +118,6 @@ export default function KnowledgeBasePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <BookOpen className="size-5 text-primary" />
-
             <h1 className="text-2xl font-semibold tracking-tight">
               Knowledge Base
             </h1>
@@ -139,12 +130,10 @@ export default function KnowledgeBasePage() {
 
         <div className="flex gap-2">
           <Button variant="outline">
-            <Globe className="mr-2 size-4" />
             Add URL
           </Button>
 
           <Button>
-            <Upload className="mr-2 size-4" />
             Upload Document
           </Button>
         </div>
@@ -153,14 +142,14 @@ export default function KnowledgeBasePage() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => {
-          const Icon = stat.icon;
+          // const Icon = stat.icon;
 
           return (
             <Card key={stat.title}>
               <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {/* <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="size-5" />
-                </div>
+                </div> */}
 
                 <div>
                   <p className="text-sm text-muted-foreground">
@@ -223,7 +212,7 @@ export default function KnowledgeBasePage() {
           {/* Documents */}
           <div className="divide-y">
             {documents.map((document) => {
-              const Icon = getDocumentIcon(document.type);
+              // const Icon = getDocumentIcon(document.type);
 
               return (
                 <div
@@ -233,9 +222,9 @@ export default function KnowledgeBasePage() {
                   <div className="grid gap-4 md:grid-cols-[2fr_100px_120px_120px_40px] md:items-center md:gap-4">
                     {/* Source */}
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-background">
+                      {/* <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-background">
                         <Icon className="size-5 text-muted-foreground" />
-                      </div>
+                      </div> */}
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">

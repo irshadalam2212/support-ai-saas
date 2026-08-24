@@ -99,7 +99,7 @@ export default function ConversationDetailPage() {
                 variant="secondary"
                 className="gap-1 bg-blue-50 text-blue-700 hover:bg-blue-50"
               >
-                <Clock3 className="size-3" />
+                {/* <Clock3 className="size-3" /> */}
                 Open
               </Badge>
 
@@ -119,7 +119,7 @@ export default function ConversationDetailPage() {
 
         <div className="flex items-center gap-2">
           <Button variant="outline">
-            <CheckCircle2 className="mr-2 size-4" />
+            {/* <CheckCircle2 className="mr-2 size-4" /> */}
             Resolve
           </Button>
 
@@ -152,7 +152,7 @@ export default function ConversationDetailPage() {
             </div>
 
             <Badge variant="outline" className="gap-1">
-              <Bot className="size-3" />
+              {/* <Bot className="size-3" /> */}
               AI Handling
             </Badge>
           </div>
@@ -169,11 +169,11 @@ export default function ConversationDetailPage() {
                     isCustomer ? "justify-start" : "justify-end"
                   }`}
                 >
-                  {!isCustomer && (
+                  {/* {!isCustomer && (
                     <div className="order-2 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <Bot className="size-4" />
                     </div>
-                  )}
+                  )} */}
 
                   {isCustomer && (
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
@@ -212,7 +212,7 @@ export default function ConversationDetailPage() {
 
                     {!isCustomer && (
                       <div className="mt-1 flex items-center justify-end gap-1 text-[11px] text-muted-foreground">
-                        <Check className="size-3" />
+                        {/* <Check className="size-3" /> */}
                         AI response
                       </div>
                     )}
@@ -245,13 +245,13 @@ export default function ConversationDetailPage() {
                     size="sm"
                     className="gap-2"
                   >
-                    <Sparkles className="size-4" />
+                    {/* <Sparkles className="size-4" /> */}
                     AI Suggest
                   </Button>
                 </div>
 
                 <Button size="sm">
-                  <Send className="mr-2 size-4" />
+                  {/* <Send className="mr-2 size-4" /> */}
                   Send
                 </Button>
               </div>
@@ -345,7 +345,7 @@ export default function ConversationDetailPage() {
                     variant="secondary"
                     className="gap-1 bg-blue-50 text-blue-700 hover:bg-blue-50"
                   >
-                    <Clock3 className="size-3" />
+                    {/* <Clock3 className="size-3" /> */}
                     Open
                   </Badge>
                 </div>
@@ -367,7 +367,7 @@ export default function ConversationDetailPage() {
                 </p>
 
                 <div className="mt-1 flex items-center gap-2">
-                  <Bot className="size-4 text-primary" />
+                  {/* <Bot className="size-4 text-primary" /> */}
 
                   <span className="text-sm">
                     AI Assistant
@@ -390,7 +390,7 @@ export default function ConversationDetailPage() {
           {/* RAG Sources */}
           <Card className="p-5">
             <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-primary" />
+              {/* <Sparkles className="size-4 text-primary" /> */}
 
               <h2 className="text-sm font-semibold">
                 AI Sources
@@ -407,9 +407,9 @@ export default function ConversationDetailPage() {
                   key={source.title}
                   className="flex items-center gap-3 rounded-lg border p-3"
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                  {/* <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
                     <FileText className="size-4 text-muted-foreground" />
-                  </div>
+                  </div> */}
 
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium">
@@ -428,9 +428,9 @@ export default function ConversationDetailPage() {
           {/* Handoff */}
           <Card className="border-dashed p-5">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+              {/* <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <UserRound className="size-4" />
-              </div>
+              </div> */}
 
               <div>
                 <h2 className="text-sm font-semibold">

@@ -1,11 +1,7 @@
 import {
-  Bot,
   ChevronDown,
-  FileText,
   Info,
-  Save,
   Sparkles,
-  Zap,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +20,7 @@ export default function AIAssistantPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Bot className="size-5 text-primary" />
+            {/* <Bot className="size-5 text-primary" /> */}
 
             <h1 className="text-2xl font-semibold tracking-tight">
               AI Assistant
@@ -46,7 +42,7 @@ export default function AIAssistantPage() {
         </div>
 
         <Button>
-          <Save className="mr-2 size-4" />
+          {/* <Save className="mr-2 size-4" /> */}
           Save Changes
         </Button>
       </div>
@@ -57,9 +53,9 @@ export default function AIAssistantPage() {
           {/* General */}
           <Card className="p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+              {/* <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
                 <Bot className="size-4 text-primary" />
-              </div>
+              </div> */}
 
               <div>
                 <h2 className="font-semibold">
@@ -108,9 +104,9 @@ export default function AIAssistantPage() {
           {/* System Instructions */}
           <Card className="p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+              {/* <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
                 <Sparkles className="size-4 text-primary" />
-              </div>
+              </div> */}
 
               <div>
                 <h2 className="font-semibold">
@@ -152,9 +148,9 @@ export default function AIAssistantPage() {
           {/* Model Settings */}
           <Card className="p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+              {/* <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
                 <Zap className="size-4 text-primary" />
-              </div>
+              </div> */}
 
               <div>
                 <h2 className="font-semibold">
@@ -215,9 +211,9 @@ export default function AIAssistantPage() {
           {/* Knowledge Base */}
           <Card className="p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+              {/* <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
                 <FileText className="size-4 text-primary" />
-              </div>
+              </div> */}
 
               <div>
                 <h2 className="font-semibold">
@@ -243,9 +239,9 @@ export default function AIAssistantPage() {
                   className="flex items-center justify-between rounded-lg border p-4"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex size-9 items-center justify-center rounded-md bg-muted">
+                    {/* <div className="flex size-9 items-center justify-center rounded-md bg-muted">
                       <FileText className="size-4 text-muted-foreground" />
-                    </div>
+                    </div> */}
 
                     <div>
                       <p className="text-sm font-medium">
@@ -267,9 +263,9 @@ export default function AIAssistantPage() {
           {/* Human Handoff */}
           <Card className="p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+              {/* <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
                 <Bot className="size-4 text-primary" />
-              </div>
+              </div> */}
 
               <div>
                 <h2 className="font-semibold">
@@ -322,7 +318,7 @@ export default function AIAssistantPage() {
           <Card className="overflow-hidden">
             <div className="border-b bg-muted/30 p-5">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" />
+                {/* <Sparkles className="size-4 text-primary" /> */}
 
                 <h2 className="font-semibold">
                   Assistant Preview
@@ -338,9 +334,9 @@ export default function AIAssistantPage() {
               <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
                 {/* Chat Header */}
                 <div className="flex items-center gap-3 border-b p-4">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  {/* <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Bot className="size-4" />
-                  </div>
+                  </div> */}
 
                   <div>
                     <p className="text-sm font-medium">

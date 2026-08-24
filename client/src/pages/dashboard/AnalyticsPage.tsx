@@ -1,13 +1,9 @@
 import {
     ArrowDownRight,
     ArrowUpRight,
-    BarChart3,
     Bot,
-    CheckCircle2,
     Clock3,
-    DollarSign,
     MessageSquare,
-    Sparkles,
     Users,
 } from "lucide-react";
 
@@ -106,8 +102,6 @@ export default function AnalyticsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        <BarChart3 className="size-5 text-primary" />
-
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Analytics
                         </h1>
@@ -152,14 +146,11 @@ export default function AnalyticsPage() {
             {/* Stats */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => {
-                    const Icon = stat.icon;
 
                     return (
                         <Card key={stat.title} className="p-5">
                             <div className="flex items-start justify-between">
-                                <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                    <Icon className="size-5" />
-                                </div>
+                                <h3>{stat.title}</h3>
 
                                 <Badge
                                     variant="secondary"
@@ -169,10 +160,6 @@ export default function AnalyticsPage() {
                                     {stat.change}
                                 </Badge>
                             </div>
-
-                            <p className="mt-4 text-sm text-muted-foreground">
-                                {stat.title}
-                            </p>
 
                             <p className="mt-1 text-2xl font-semibold">
                                 {stat.value}
@@ -258,9 +245,6 @@ export default function AnalyticsPage() {
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card className="p-6">
                     <div className="flex items-start gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <Sparkles className="size-5" />
-                        </div>
 
                         <div>
                             <h2 className="font-semibold">
@@ -377,9 +361,6 @@ export default function AnalyticsPage() {
             <div className="grid gap-6 lg:grid-cols-3">
                 <Card className="p-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <DollarSign className="size-5" />
-                        </div>
 
                         <div>
                             <p className="text-sm text-muted-foreground">
@@ -400,9 +381,6 @@ export default function AnalyticsPage() {
 
                 <Card className="p-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <Bot className="size-5" />
-                        </div>
 
                         <div>
                             <p className="text-sm text-muted-foreground">
@@ -422,9 +400,6 @@ export default function AnalyticsPage() {
 
                 <Card className="p-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <CheckCircle2 className="size-5" />
-                        </div>
 
                         <div>
                             <p className="text-sm text-muted-foreground">

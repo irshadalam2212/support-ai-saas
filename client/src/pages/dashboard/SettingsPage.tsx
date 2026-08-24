@@ -2,7 +2,6 @@ import {
     Building2,
     Globe,
     Mail,
-    Save,
     Settings,
     ShieldCheck,
 } from "lucide-react";
@@ -22,7 +21,7 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        <Settings className="size-5 text-primary" />
+                        {/* <Settings className="size-5 text-primary" /> */}
 
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Settings
@@ -35,7 +34,7 @@ export default function SettingsPage() {
                 </div>
 
                 <Button>
-                    <Save className="mr-2 size-4" />
+                    {/* <Save className="mr-2 size-4" /> */}
                     Save Changes
                 </Button>
             </div>
@@ -46,7 +45,7 @@ export default function SettingsPage() {
                     <button
                         className="flex w-full items-center gap-3 rounded-md bg-muted px-3 py-2.5 text-left text-sm font-medium"
                     >
-                        <Building2 className="size-4" />
+                        {/* <Building2 className="size-4" /> */}
                         General
                     </button>
 
@@ -54,7 +53,7 @@ export default function SettingsPage() {
                         to="/dashboard/settings/assistant"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        <Settings className="size-4" />
+                        {/* <Settings className="size-4" /> */}
                         AI & Assistant
                     </Link>
 
@@ -62,7 +61,7 @@ export default function SettingsPage() {
                         to="/dashboard/settings/team"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        <Mail className="size-4" />
+                        {/* <Mail className="size-4" /> */}
                         Team Members
                     </Link>
 
@@ -70,7 +69,7 @@ export default function SettingsPage() {
                         to="/dashboard/settings/integrations"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        <Globe className="size-4" />
+                        {/* <Globe className="size-4" /> */}
                         Integrations
                     </Link>
 
@@ -78,7 +77,7 @@ export default function SettingsPage() {
                         to="/dashboard/settings/security"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        <ShieldCheck className="size-4" />
+                        {/* <ShieldCheck className="size-4" /> */}
                         Security
                     </Link>
                 </Card>

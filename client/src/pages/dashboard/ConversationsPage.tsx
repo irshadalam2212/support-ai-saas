@@ -1,11 +1,6 @@
 import {
-    Bot,
-    CheckCircle2,
-    Clock3,
-    MessageSquare,
     MoreHorizontal,
     Search,
-    UserRound,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -84,7 +79,7 @@ function getStatusBadge(status: string) {
                 variant="secondary"
                 className="gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-50"
             >
-                <CheckCircle2 className="size-3" />
+                {/* <CheckCircle2 className="size-3" /> */}
                 Resolved
             </Badge>
         );
@@ -95,7 +90,7 @@ function getStatusBadge(status: string) {
             variant="secondary"
             className="gap-1 bg-blue-50 text-blue-700 hover:bg-blue-50"
         >
-            <Clock3 className="size-3" />
+            {/* <Clock3 className="size-3" /> */}
             Open
         </Badge>
     );
@@ -132,8 +127,6 @@ export default function ConversationsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        <MessageSquare className="size-5 text-primary" />
-
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Conversations
                         </h1>
@@ -146,7 +139,6 @@ export default function ConversationsPage() {
                 </div>
 
                 <Button>
-                    <Bot className="mr-2 size-4" />
                     AI Assistant
                 </Button>
             </div>
@@ -268,8 +260,6 @@ export default function ConversationsPage() {
                                             <p className="truncate text-sm font-medium">
                                                 {conversation.customer}
                                             </p>
-
-                                            <UserRound className="size-3 text-muted-foreground" />
                                         </div>
 
                                         <p className="truncate text-xs text-muted-foreground">
@@ -307,12 +297,10 @@ export default function ConversationsPage() {
                                 <div>
                                     {conversation.source === "AI" ? (
                                         <Badge variant="outline" className="gap-1">
-                                            <Bot className="size-3" />
                                             AI
                                         </Badge>
                                     ) : (
                                         <Badge variant="outline" className="gap-1">
-                                            <UserRound className="size-3" />
                                             Human
                                         </Badge>
                                     )}

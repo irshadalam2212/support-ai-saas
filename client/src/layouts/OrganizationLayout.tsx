@@ -1,47 +1,38 @@
-import { BarChart3, BookOpen, Bot, LayoutDashboard, MessageSquare, Settings, Users, type LucideIcon } from "lucide-react";
-import { Link, Outlet } from "react-router";
+import { NavLink, Outlet } from "react-router";
 
 type NavItem = {
     label: string;
     path: string;
-    icon: LucideIcon;
 };
 
 const workspaceItems: NavItem[] = [
     {
         label: "Overview",
         path: "/dashboard",
-        icon: LayoutDashboard,
     },
     {
         label: "Conversations",
         path: "/dashboard/conversations",
-        icon: MessageSquare,
     },
     {
         label: "Knowledge Base",
         path: "/dashboard/knowledge-base",
-        icon: BookOpen,
     },
     {
         label: "AI Assistant",
         path: "/dashboard/assistant",
-        icon: Bot,
     },
     {
         label: "Analytics",
         path: "/dashboard/analytics",
-        icon: BarChart3,
     },
     {
         label: "Customers",
         path: "/dashboard/customers",
-        icon: Users,
     },
     {
         label: "Settings",
         path: "/dashboard/settings",
-        icon: Settings,
     },
 ];
 
@@ -63,21 +54,21 @@ export default function OrganizationLayout() {
                         Workspace
                     </p>
 
-                    {workspaceItems.map((item) => {
-                        const Icon = item.icon;
-
-                        return (
-                            <Link
-                                key={item.label}
-                                to={item.path}
-                                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-muted"
-                            >
-                                <Icon className="size-4" />
-
-                                <span>{item.label}</span>
-                            </Link>
-                        );
-                    })}
+                    {workspaceItems.map((item) => (
+                        <NavLink
+                            key={item.label}
+                            to={item.path}
+                            end={item.path === "/dashboard"}
+                            className={({ isActive }) =>
+                                `flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${isActive
+                                    ? "bg-muted font-medium text-foreground"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`
+                            }
+                        >
+                            <span>{item.label}</span>
+                        </NavLink>
+                    ))}
 
                     <p className="mb-2 mt-6 px-3 text-xs font-medium uppercase text-muted-foreground">
                         Management

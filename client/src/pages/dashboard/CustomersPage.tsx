@@ -4,8 +4,6 @@ import {
   ChevronRight,
   MoreHorizontal,
   Search,
-  UserPlus,
-  Users,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +88,7 @@ export default function CustomersPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Users className="size-5 text-primary" />
+            {/* <Users className="size-5 text-primary" /> */}
 
             <h1 className="text-2xl font-semibold tracking-tight">
               Customers
@@ -103,7 +101,7 @@ export default function CustomersPage() {
         </div>
 
         <Button>
-          <UserPlus className="mr-2 size-4" />
+          {/* <UserPlus className="mr-2 size-4" /> */}
           Add Customer
         </Button>
       </div>
