@@ -1,11 +1,3 @@
-import {
-    Building2,
-    Globe,
-    Mail,
-    Settings,
-    ShieldCheck,
-} from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,8 +13,6 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        {/* <Settings className="size-5 text-primary" /> */}
-
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Settings
                         </h1>

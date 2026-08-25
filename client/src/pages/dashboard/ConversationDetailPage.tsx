@@ -1,15 +1,7 @@
 import {
   ArrowLeft,
-  Bot,
-  Check,
-  CheckCircle2,
-  Clock3,
-  FileText,
   MoreHorizontal,
   Paperclip,
-  Send,
-  Sparkles,
-  UserRound,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -165,16 +157,9 @@ export default function ConversationDetailPage() {
               return (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${
-                    isCustomer ? "justify-start" : "justify-end"
-                  }`}
+                  className={`flex gap-3 ${isCustomer ? "justify-start" : "justify-end"
+                    }`}
                 >
-                  {/* {!isCustomer && (
-                    <div className="order-2 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Bot className="size-4" />
-                    </div>
-                  )} */}
-
                   {isCustomer && (
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
                       SJ
@@ -182,14 +167,12 @@ export default function ConversationDetailPage() {
                   )}
 
                   <div
-                    className={`max-w-[75%] ${
-                      isCustomer ? "" : "order-1"
-                    }`}
+                    className={`max-w-[75%] ${isCustomer ? "" : "order-1"
+                      }`}
                   >
                     <div
-                      className={`mb-1 flex items-center gap-2 ${
-                        isCustomer ? "" : "justify-end"
-                      }`}
+                      className={`mb-1 flex items-center gap-2 ${isCustomer ? "" : "justify-end"
+                        }`}
                     >
                       <span className="text-xs font-medium">
                         {message.name}
@@ -201,11 +184,10 @@ export default function ConversationDetailPage() {
                     </div>
 
                     <div
-                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                        isCustomer
-                          ? "rounded-tl-sm bg-muted"
-                          : "rounded-tr-sm bg-primary text-primary-foreground"
-                      }`}
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${isCustomer
+                        ? "rounded-tl-sm bg-muted"
+                        : "rounded-tr-sm bg-primary text-primary-foreground"
+                        }`}
                     >
                       {message.message}
                     </div>
@@ -245,13 +227,11 @@ export default function ConversationDetailPage() {
                     size="sm"
                     className="gap-2"
                   >
-                    {/* <Sparkles className="size-4" /> */}
                     AI Suggest
                   </Button>
                 </div>
 
                 <Button size="sm">
-                  {/* <Send className="mr-2 size-4" /> */}
                   Send
                 </Button>
               </div>
@@ -390,8 +370,6 @@ export default function ConversationDetailPage() {
           {/* RAG Sources */}
           <Card className="p-5">
             <div className="flex items-center gap-2">
-              {/* <Sparkles className="size-4 text-primary" /> */}
-
               <h2 className="text-sm font-semibold">
                 AI Sources
               </h2>
@@ -407,10 +385,6 @@ export default function ConversationDetailPage() {
                   key={source.title}
                   className="flex items-center gap-3 rounded-lg border p-3"
                 >
-                  {/* <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                    <FileText className="size-4 text-muted-foreground" />
-                  </div> */}
-
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium">
                       {source.title}
@@ -428,10 +402,6 @@ export default function ConversationDetailPage() {
           {/* Handoff */}
           <Card className="border-dashed p-5">
             <div className="flex items-start gap-3">
-              {/* <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <UserRound className="size-4" />
-              </div> */}
-
               <div>
                 <h2 className="text-sm font-semibold">
                   Human Handoff

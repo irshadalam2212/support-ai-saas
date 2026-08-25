@@ -17,6 +17,7 @@ import AssistantSettingsPage from "@/pages/dashboard/settings/AssistantSettingsP
 import TeamMembersPage from "@/pages/dashboard/settings/TeamMembersPage";
 import IntegrationsPage from "@/pages/dashboard/settings/IntegrationsPage";
 import SecurityPage from "@/pages/dashboard/settings/SecurityPage";
+import Billing from "@/pages/dashboard/Billing";
 
 export const router = createBrowserRouter([
     {
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
                 path: "settings/security",
                 element: <SecurityPage />,
             },
+            {
+                path: "/dashboard/billing",
+                element: <Billing />
+            }
         ],
     },
     {

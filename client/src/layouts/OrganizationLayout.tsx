@@ -36,6 +36,21 @@ const workspaceItems: NavItem[] = [
     },
 ];
 
+const managementItems: NavItem[] = [
+    {
+        label: "Settings",
+        path: "/dashboard/settings",
+    },
+    // {
+    //     label: "Integrations",
+    //     path: "/dashboard/integrations",
+    // },
+    {
+        label: "Billing",
+        path: "/dashboard/billing",
+    }
+]
+
 export default function OrganizationLayout() {
     return (
         <div className="flex min-h-screen bg-muted/30">
@@ -74,13 +89,20 @@ export default function OrganizationLayout() {
                         Management
                     </p>
 
-                    {["Integrations", "Settings", "Billing"].map((item) => (
-                        <button
-                            key={item}
-                            className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    {managementItems.map((item) => (
+                        <NavLink
+                            key={item.label}
+                            to={item.path}
+                            end={item.path === "/dashboard"}
+                            className={({ isActive }) =>
+                                `flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${isActive
+                                    ? "bg-muted font-medium text-foreground"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`
+                            }
                         >
-                            {item}
-                        </button>
+                            <span>{item.label}</span>
+                        </NavLink>
                     ))}
                 </nav>
             </aside>
