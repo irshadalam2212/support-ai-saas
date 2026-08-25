@@ -32,18 +32,17 @@ export default function SettingsPage() {
             <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
                 {/* Settings Navigation */}
                 <Card className="h-fit p-2">
-                    <button
+                    <Link
+                        to="/dashboard/settings"
                         className="flex w-full items-center gap-3 rounded-md bg-muted px-3 py-2.5 text-left text-sm font-medium"
                     >
-                        {/* <Building2 className="size-4" /> */}
                         General
-                    </button>
+                    </Link>
 
                     <Link
                         to="/dashboard/settings/assistant"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        {/* <Settings className="size-4" /> */}
                         AI & Assistant
                     </Link>
 
@@ -51,7 +50,6 @@ export default function SettingsPage() {
                         to="/dashboard/settings/team"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        {/* <Mail className="size-4" /> */}
                         Team Members
                     </Link>
 
@@ -59,7 +57,6 @@ export default function SettingsPage() {
                         to="/dashboard/settings/integrations"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        {/* <Globe className="size-4" /> */}
                         Integrations
                     </Link>
 
@@ -67,7 +64,6 @@ export default function SettingsPage() {
                         to="/dashboard/settings/security"
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted"
                     >
-                        {/* <ShieldCheck className="size-4" /> */}
                         Security
                     </Link>
                 </Card>

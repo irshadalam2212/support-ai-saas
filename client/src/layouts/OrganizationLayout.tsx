@@ -41,10 +41,6 @@ const managementItems: NavItem[] = [
         label: "Settings",
         path: "/dashboard/settings",
     },
-    // {
-    //     label: "Integrations",
-    //     path: "/dashboard/integrations",
-    // },
     {
         label: "Billing",
         path: "/dashboard/billing",
