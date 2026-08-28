@@ -20,7 +20,7 @@ export const createUser = async (
             email,
             passwordHash
         },
-        select : {
+        select: {
             id: true,
             name: true,
             email: true,
@@ -28,3 +28,38 @@ export const createUser = async (
         }
     })
 }
+
+export const createRefreshToken = async (
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date
+) => {
+    return prisma.refreshToken.create({
+        data: {
+            userId,
+            tokenHash,
+            expiresAt
+        }
+    })
+}
+
+export const findRefreshToken = async (tokenHash: string) => {
+    return prisma.refreshToken.findUnique({
+        where: {
+            tokenHash
+        }
+    })
+}
+
+export const revokeRefreshToken = async (
+    id: string
+) => {
+    return prisma.refreshToken.update({
+        where: {
+            id,
+        },
+        data: {
+            revokedAt: new Date(),
+        },
+    });
+};

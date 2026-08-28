@@ -1,6 +1,7 @@
 import bcrypt, { compare } from 'bcrypt';
 import * as authRepository from "./auth.repository"
 import { generateAccessToken } from '../../utils/jwt';
+import { generateRefreshToken, hashRefreshToken } from '../../utils/refresh-token';
 
 export const register = async (
   name: string,
@@ -41,9 +42,22 @@ export const login = async (
   }
 
   const accessToken = generateAccessToken({ userId: user.id })
+  const refreshToken = generateRefreshToken();
+  const refreshTokenHash = hashRefreshToken(refreshToken)
+  const refreshTokenExpiresAt = new Date();
+  refreshTokenExpiresAt.setDate(
+    refreshTokenExpiresAt.getDate() + 30
+  )
+
+  await authRepository.createRefreshToken(
+    user.id,
+    refreshTokenHash,
+    refreshTokenExpiresAt
+  )
 
   return {
     accessToken,
+    refreshToken,
     user: {
       id: user.id,
       name: user.name,
