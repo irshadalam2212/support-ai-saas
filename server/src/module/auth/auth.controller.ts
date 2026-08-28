@@ -1,21 +1,28 @@
-import { Request, Response } from "express";
-import { registerUser } from "./auth.services";
+import { Request, Response, NextFunction } from "express";
+import * as authService from "./auth.service";
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const result = await registerUser(req.body);
+    const { name, email, password } = req.body;
 
-    return res.status(201).json({
+    const user = await authService.register(
+      name,
+      email,
+      password
+    );
+
+    res.status(201).json({
       success: true,
-      message: "Registration successful",
-      data: result,
+      message: "User registered successfully",
+      data: {
+        user,
+      },
     });
   } catch (error) {
-    console.error(error);
-
-    return res.status(400).json({
-      success: false,
-      message: error instanceof Error ? error.message : "Registration failed",
-    });
+    next(error);
   }
 };
