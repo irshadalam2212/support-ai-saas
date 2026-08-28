@@ -7,6 +7,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  AGENT
+  VIEWER
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
 model User {
   id           String @id @default(cuid())
   name         String
@@ -16,7 +49,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships OrganizationMember[]
+  memberships         OrganizationMember[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  conversations       Conversation[]
 }
 
 model Organization {
@@ -27,7 +63,10 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships OrganizationMember[]
+  memberships    OrganizationMember[]
+  knowledgeBases KnowledgeBase[]
+  subscription   Subscription?
+  usageRecords   UsageRecord[]
 }
 
 model OrganizationMember {
@@ -48,9 +87,173 @@ model OrganizationMember {
   @@index([userId])
 }
 
-enum OrganizationRole {
-  OWNER
-  ADMIN
-  AGENT
-  VIEWER
+model KnowledgeBase {
+  id             String @id @default(cuid())
+  organizationId String
+
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  documents     Document[]
+  conversations Conversation[]
+
+  @@index([organizationId])
+}
+
+model Document {
+  id              String @id @default(cuid())
+  knowledgeBaseId String
+
+  name         String
+  originalName String
+
+  storageKey String
+  mimeType   String
+  size       BigInt
+
+  status       DocumentStatus @default(UPLOADED)
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  knowledgeBase KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  chunks DocumentChunk[]
+
+  @@index([knowledgeBaseId])
+  @@index([knowledgeBaseId, status])
+}
+
+model DocumentChunk {
+  id         String @id @default(cuid())
+  documentId String
+
+  chunkIndex Int
+
+  content String @db.LongText
+
+  page    Int?
+  section String?
+
+  vectorId String?
+
+  createdAt DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([documentId])
+  @@index([vectorId])
+}
+
+model RefreshToken {
+  id     String @id @default(cuid())
+  userId String
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id     String @id @default(cuid())
+  userId String
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Subscription {
+  id             String @id @default(cuid())
+  organizationId String @unique
+
+  plan   SubscriptionPlan   @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  startedAt DateTime?
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model UsageRecord {
+  id             String @id @default(cuid())
+  organizationId String
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  aiMessages     Int    @default(0)
+  documents      Int    @default(0)
+  storageBytes   BigInt @default(0)
+  embeddingCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, periodStart, periodEnd])
+  @@index([organizationId])
+}
+
+model Conversation {
+  id              String @id @default(cuid())
+  userId          String
+  knowledgeBaseId String
+
+  title String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  knowledgeBase KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@index([userId])
+  @@index([knowledgeBaseId])
+  @@index([userId, knowledgeBaseId])
+}
+
+model Message {
+  id             String @id @default(cuid())
+  conversationId String
+
+  role    MessageRole
+  content String      @db.LongText
+
+  createdAt DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }
