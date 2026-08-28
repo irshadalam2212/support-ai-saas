@@ -124,3 +124,17 @@ export const refreshAccessToken = async (refreshToken: string) => {
     refreshToken: newRefreshToken,
   }
 }
+
+export const logout = async (
+  refreshToken: string
+) => {
+  const tokenHash = hashRefreshToken(refreshToken);
+
+  const storedToken = await authRepository.findRefreshToken(tokenHash);
+
+  if (!storedToken) {
+    return
+  }
+
+  await authRepository.revokeTokenFamily(storedToken.id)
+}
