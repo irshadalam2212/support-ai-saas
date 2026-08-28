@@ -10,3 +10,7 @@ export const hashRefreshToken = (token: string) => {
         .update(token)
         .digest("hex")
 };
+
+export const generateTokenFamily = () => {
+    return crypto.randomUUID();
+}

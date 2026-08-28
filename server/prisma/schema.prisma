@@ -156,7 +156,8 @@ model RefreshToken {
   id     String @id @default(cuid())
   userId String
 
-  tokenHash String @unique
+  tokenHash   String @unique
+  tokenFamily String
 
   expiresAt DateTime
   revokedAt DateTime?

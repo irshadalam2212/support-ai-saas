@@ -1,7 +1,7 @@
 import bcrypt, { compare } from 'bcrypt';
 import * as authRepository from "./auth.repository"
 import { generateAccessToken } from '../../utils/jwt';
-import { generateRefreshToken, hashRefreshToken } from '../../utils/refresh-token';
+import { generateRefreshToken, generateTokenFamily, hashRefreshToken } from '../../utils/refresh-token';
 
 export const register = async (
   name: string,
@@ -44,6 +44,7 @@ export const login = async (
   const accessToken = generateAccessToken({ userId: user.id })
   const refreshToken = generateRefreshToken();
   const refreshTokenHash = hashRefreshToken(refreshToken)
+  const tokenFamily = generateTokenFamily();
   const refreshTokenExpiresAt = new Date();
   refreshTokenExpiresAt.setDate(
     refreshTokenExpiresAt.getDate() + 30
@@ -52,6 +53,7 @@ export const login = async (
   await authRepository.createRefreshToken(
     user.id,
     refreshTokenHash,
+    tokenFamily,
     refreshTokenExpiresAt
   )
 
@@ -63,5 +65,62 @@ export const login = async (
       name: user.name,
       email: user.email
     }
+  }
+}
+
+export const refreshAccessToken = async (refreshToken: string) => {
+
+  const tokenHash = hashRefreshToken(refreshToken);
+
+  const storedToken = await authRepository.findRefreshToken(tokenHash);
+
+  if (!storedToken) {
+    throw new Error("Invalid refresh token");
+  }
+
+  if (storedToken.revokedAt) {
+    throw new Error("Refresh token has been revoked");
+  }
+
+  if (storedToken.expiresAt < new Date()) {
+    throw new Error("Refresh token has expired");
+  }
+
+  // Revoke old token
+  if (storedToken.revokedAt) {
+    await authRepository.revokeTokenFamily(
+      storedToken.tokenFamily
+    );
+
+    throw new Error("Refresh token reuse detected");
+  }
+
+  // Generate replacement
+  const newRefreshToken = generateRefreshToken();
+
+  const newRefreshTokenHash =
+    hashRefreshToken(newRefreshToken);
+
+  const newExpiresAt = new Date();
+
+  newExpiresAt.setDate(
+    newExpiresAt.getDate() + 30
+  );
+
+
+  await authRepository.createRefreshToken(
+    storedToken.userId,
+    newRefreshTokenHash,
+    storedToken.tokenFamily,
+    newExpiresAt
+  );
+
+  const accessToken = generateAccessToken({
+    userId: storedToken.userId,
+  });
+
+  return {
+    accessToken,
+    refreshToken: newRefreshToken,
   }
 }

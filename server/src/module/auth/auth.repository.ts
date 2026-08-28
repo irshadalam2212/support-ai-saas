@@ -32,12 +32,14 @@ export const createUser = async (
 export const createRefreshToken = async (
     userId: string,
     tokenHash: string,
+    tokenFamily: string,
     expiresAt: Date
 ) => {
     return prisma.refreshToken.create({
         data: {
             userId,
             tokenHash,
+            tokenFamily,
             expiresAt
         }
     })
@@ -51,15 +53,16 @@ export const findRefreshToken = async (tokenHash: string) => {
     })
 }
 
-export const revokeRefreshToken = async (
-    id: string
+export const revokeTokenFamily = async (
+  tokenFamily: string
 ) => {
-    return prisma.refreshToken.update({
-        where: {
-            id,
-        },
-        data: {
-            revokedAt: new Date(),
-        },
-    });
+  return prisma.refreshToken.updateMany({
+    where: {
+      tokenFamily,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
 };
