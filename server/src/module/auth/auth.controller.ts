@@ -26,3 +26,24 @@ export const register = async (
     next(error);
   }
 };
+
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body
+
+    const result = await authService.login(email, password);
+
+    res.status(200).json({
+      success: true,
+      code: 200,
+      message: "Login successfull.",
+      data: result
+    })
+  } catch (error) {
+    next(error)
+  }
+}
