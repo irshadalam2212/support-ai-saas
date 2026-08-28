@@ -2,6 +2,7 @@ import bcrypt, { compare } from 'bcrypt';
 import * as authRepository from "./auth.repository"
 import { generateAccessToken } from '../../utils/jwt';
 import { generateRefreshToken, generateTokenFamily, hashRefreshToken } from '../../utils/refresh-token';
+import { AppError } from '../../utils/apperror';
 
 export const register = async (
   name: string,
@@ -12,7 +13,10 @@ export const register = async (
   const existingUser = await authRepository.findUserByEmail(email);
 
   if (existingUser) {
-    throw new Error("User with this email already exists");
+    throw new AppError(
+      409,
+      "Email already registered"
+    );
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -29,7 +33,10 @@ export const login = async (
   const user = await authRepository.findUserByEmail(email)
 
   if (!user) {
-    throw new Error("Invalid email or password.")
+    throw new AppError(
+      401,
+      "Invalid email or password"
+    );
   }
 
   const matchedPassword = await bcrypt.compare(
@@ -38,7 +45,10 @@ export const login = async (
   )
 
   if (!matchedPassword) {
-    throw new Error("Invalid email or password.")
+    throw new AppError(
+      401,
+      "Invalid email or password"
+    );
   }
 
   const accessToken = generateAccessToken({ userId: user.id })
@@ -75,15 +85,24 @@ export const refreshAccessToken = async (refreshToken: string) => {
   const storedToken = await authRepository.findRefreshToken(tokenHash);
 
   if (!storedToken) {
-    throw new Error("Invalid refresh token");
+    throw new AppError(
+      401,
+      "Invalid refresh token"
+    );
   }
 
   if (storedToken.revokedAt) {
-    throw new Error("Refresh token has been revoked");
+    throw new AppError(
+      401,
+      "Refresh token has been revoked"
+    );
   }
 
   if (storedToken.expiresAt < new Date()) {
-    throw new Error("Refresh token has expired");
+    throw new AppError(
+      401,
+      "Refresh token has expired"
+    );
   }
 
   // Revoke old token

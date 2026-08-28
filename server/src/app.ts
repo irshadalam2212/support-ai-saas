@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./module/auth/auth.routes";
 import organizationRoutes from "./module/organization/organization.routes"
+import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
 
@@ -31,5 +32,7 @@ app.get("/api/v1/health", (_req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/organizations", organizationRoutes);
+
+app.use(errorMiddleware);
 
 export default app;
