@@ -10,7 +10,7 @@ export const createOrganization = async (
     const { name, slug } = req.body;
 
     // Temporary user ID
-    const userId = "TEMP_USER_ID";
+    const userId = req.user!.id;
 
     const organization =
       await organizationService.createOrganization(
