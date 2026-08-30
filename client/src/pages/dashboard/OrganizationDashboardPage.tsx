@@ -52,7 +52,6 @@ export default function OverviewPage() {
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => {
-                    const Icon = stat.icon;
 
                     return (
                         <Card key={stat.title}>
@@ -61,7 +60,7 @@ export default function OverviewPage() {
                                     {stat.title}
                                 </CardTitle>
 
-                                <Icon className="size-4 text-muted-foreground" />
+                                {/* <Icon className="size-4 text-muted-foreground" /> */}
                             </CardHeader>
 
                             <CardContent>
