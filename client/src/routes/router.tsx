@@ -1,7 +1,4 @@
 import { createBrowserRouter } from "react-router";
-
-import HomePage from "@/pages/public/HomePage";
-import LoginPage from "@/pages/auth/LoginPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import CustomerChatPage from "@/pages/customer/CustomerChatPage";
 import OrganizationLayout from "@/layouts/OrganizationLayout";
@@ -18,15 +15,32 @@ import TeamMembersPage from "@/pages/dashboard/settings/TeamMembersPage";
 import IntegrationsPage from "@/pages/dashboard/settings/IntegrationsPage";
 import SecurityPage from "@/pages/dashboard/settings/SecurityPage";
 import Billing from "@/pages/dashboard/Billing";
+import LandingPage from "@/pages/public/HomePage";
+import SignupPage from "@/pages/auth/SignupPage";
+import LoginPage from "@/pages/auth/LoginPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+import ForgotPasswordPage from "@/pages/auth/ForgotPassword";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: <HomePage />,
+        element: <LandingPage />,
+    },
+    {
+        path: "/signup",
+        element: <SignupPage />,
     },
     {
         path: "/login",
         element: <LoginPage />,
+    },
+    {
+        path: "/reset-password",
+        element: <ResetPasswordPage />
+    },
+    {
+        path: "forgot-password",
+        element: <ForgotPasswordPage />
     },
     {
         path: "/admin",

@@ -1,16 +1,18 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ArrowRight,
   Eye,
   EyeOff,
-  // Github,
+//   Github,
   LockKeyhole,
   Mail,
   Sparkles,
+  User,
+  Building2,
+  ArrowRight,
+  Check,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,26 +24,29 @@ import {
   CardContent,
   CardHeader,
 } from "@/components/ui/card";
-import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
+import { signupSchema, type SignupFormValues } from "@/schemas/auth.schema";
 
-export default function LoginPage() {
+
+export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
+      fullName: "",
       email: "",
+      companyName: "",
       password: "",
-      rememberMe: false,
+      terms: false,
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    console.log("Login data:", data);
+  const onSubmit = async (data: SignupFormValues) => {
+    console.log("Signup data:", data);
 
     // API integration will be added later.
   };
@@ -57,6 +62,7 @@ export default function LoginPage() {
         <div className="absolute right-[-150px] top-1/2 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
+      {/* Page */}
       <div className="relative flex min-h-screen flex-col">
         {/* Logo */}
         <header className="flex justify-center px-6 py-8">
@@ -84,29 +90,29 @@ export default function LoginPage() {
               </div>
 
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Welcome back
+                Create your account
               </h1>
 
               <p className="mt-2 text-sm text-muted-foreground">
-                Sign in to your SupportAI account.
+                Start building your AI-powered support team.
               </p>
             </div>
 
-            {/* Login Card */}
+            {/* Signup card */}
             <Card className="rounded-2xl border shadow-xl shadow-black/5">
               <CardHeader className="pb-2">
-                <div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-2 rounded-xl border bg-muted/30 px-4 py-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <LockKeyhole className="h-4 w-4 text-primary" />
+                    <Sparkles className="h-4 w-4 text-primary" />
                   </div>
 
                   <div>
                     <p className="text-sm font-medium">
-                      Welcome back
+                      Start your 14-day free trial
                     </p>
 
                     <p className="text-xs text-muted-foreground">
-                      Enter your credentials to continue.
+                      No credit card required
                     </p>
                   </div>
                 </div>
@@ -117,6 +123,37 @@ export default function LoginPage() {
                   onSubmit={handleSubmit(onSubmit)}
                   className="space-y-5"
                 >
+                  {/* Full name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">
+                      Full name
+                    </Label>
+
+                    <Controller
+                      name="fullName"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="relative">
+                          <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                          <Input
+                            {...field}
+                            id="fullName"
+                            placeholder="John Doe"
+                            className="h-11 rounded-lg pl-10"
+                            aria-invalid={!!errors.fullName}
+                          />
+                        </div>
+                      )}
+                    />
+
+                    {errors.fullName && (
+                      <p className="text-xs text-destructive">
+                        {errors.fullName.message}
+                      </p>
+                    )}
+                  </div>
+
                   {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email">
@@ -137,7 +174,6 @@ export default function LoginPage() {
                             placeholder="you@company.com"
                             className="h-11 rounded-lg pl-10"
                             aria-invalid={!!errors.email}
-                            autoComplete="email"
                           />
                         </div>
                       )}
@@ -150,20 +186,42 @@ export default function LoginPage() {
                     )}
                   </div>
 
+                  {/* Company */}
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">
+                      Company name
+                    </Label>
+
+                    <Controller
+                      name="companyName"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="relative">
+                          <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                          <Input
+                            {...field}
+                            id="companyName"
+                            placeholder="Acme Inc"
+                            className="h-11 rounded-lg pl-10"
+                            aria-invalid={!!errors.companyName}
+                          />
+                        </div>
+                      )}
+                    />
+
+                    {errors.companyName && (
+                      <p className="text-xs text-destructive">
+                        {errors.companyName.message}
+                      </p>
+                    )}
+                  </div>
+
                   {/* Password */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">
-                        Password
-                      </Label>
-
-                      <Link
-                        to="/forgot-password"
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
+                    <Label htmlFor="password">
+                      Password
+                    </Label>
 
                     <Controller
                       name="password"
@@ -183,7 +241,6 @@ export default function LoginPage() {
                             placeholder="••••••••••••"
                             className="h-11 rounded-lg pl-10 pr-10"
                             aria-invalid={!!errors.password}
-                            autoComplete="current-password"
                           />
 
                           <button
@@ -215,26 +272,60 @@ export default function LoginPage() {
                         {errors.password.message}
                       </p>
                     )}
+
+                    {/* Password requirements */}
+                    <div className="grid grid-cols-1 gap-1 pt-1 sm:grid-cols-2">
+                      <PasswordRequirement text="At least 8 characters" />
+
+                      <PasswordRequirement text="One uppercase letter" />
+
+                      <PasswordRequirement text="One lowercase letter" />
+
+                      <PasswordRequirement text="One number" />
+                    </div>
                   </div>
 
-                  {/* Remember Me */}
+                  {/* Terms */}
                   <Controller
-                    name="rememberMe"
+                    name="terms"
                     control={control}
                     render={({ field }) => (
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          id="rememberMe"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                      <div>
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id="terms"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="mt-0.5"
+                          />
 
-                        <Label
-                          htmlFor="rememberMe"
-                          className="cursor-pointer text-sm font-normal text-muted-foreground"
-                        >
-                          Remember me
-                        </Label>
+                          <Label
+                            htmlFor="terms"
+                            className="cursor-pointer text-sm font-normal leading-5 text-muted-foreground"
+                          >
+                            I agree to the{" "}
+                            <Link
+                              to="/terms"
+                              className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                            >
+                              Terms of Service
+                            </Link>{" "}
+                            and{" "}
+                            <Link
+                              to="/privacy"
+                              className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                            >
+                              Privacy Policy
+                            </Link>
+                            .
+                          </Label>
+                        </div>
+
+                        {errors.terms && (
+                          <p className="mt-2 text-xs text-destructive">
+                            {errors.terms.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   />
@@ -246,8 +337,8 @@ export default function LoginPage() {
                     className="h-11 w-full rounded-lg"
                   >
                     {isSubmitting
-                      ? "Signing in..."
-                      : "Sign in"}
+                      ? "Creating account..."
+                      : "Create account"}
 
                     {!isSubmitting && (
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -268,7 +359,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Social Login */}
+                {/* Social auth */}
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     type="button"
@@ -289,26 +380,23 @@ export default function LoginPage() {
                   </Button>
                 </div>
 
-                {/* Signup */}
+                {/* Login */}
                 <p className="mt-6 text-center text-sm text-muted-foreground">
-                  Don't have an account?{" "}
+                  Already have an account?{" "}
                   <Link
-                    to="/signup"
+                    to="/login"
                     className="font-medium text-primary hover:underline"
                   >
-                    Sign up
+                    Sign in
                   </Link>
                 </p>
               </CardContent>
             </Card>
 
-            {/* Security */}
+            {/* Security note */}
             <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <LockKeyhole className="h-3.5 w-3.5" />
-
-              <span>
-                Your data is encrypted and securely stored.
-              </span>
+              Your data is encrypted and securely stored.
             </div>
           </div>
         </main>
@@ -318,6 +406,23 @@ export default function LoginPage() {
           © 2026 SupportAI. All rights reserved.
         </footer>
       </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Password Requirement                                                       */
+/* -------------------------------------------------------------------------- */
+
+function PasswordRequirement({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Check className="h-3 w-3 text-primary" />
+      {text}
     </div>
   );
 }
