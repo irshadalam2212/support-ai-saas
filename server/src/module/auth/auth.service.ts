@@ -9,6 +9,8 @@ import {
 } from "../../utils/jwt";
 import prisma from "../../config/prisma";
 import { randomUUID } from "crypto";
+import { generateResetToken, hashResetToken } from "../../utils/passwordReset";
+import { sendPasswordResetEmail } from "../../services/email.service";
 
 export const register = async (body: RegisterInput) => {
   const email = body.email.trim().toLowerCase();
@@ -101,5 +103,46 @@ export const forgotPassword = async (email: string) => {
     throw new AppError(404, "User not registered");
   }
 
-  
+  const { token, hashedToken } = generateResetToken();
+
+  const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      reset_password_token: hashedToken,
+      reset_password_token_expiry: expiry,
+    },
+  });
+
+  const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
+
+  await sendPasswordResetEmail(user.email, resetUrl);
+};
+
+export const resetPassword = async (token: string, password: string) => {
+  const hashedToken = hashResetToken(token);
+
+  const user = await authRepository.findUserByResetPasswordToken(hashedToken);
+
+  if (!user) {
+    throw new Error("Invalid or expired password reset link");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: hashedPassword,
+
+      //invalidate reset password token and expiry
+      reset_password_token: null,
+      reset_password_token_expiry: null,
+    },
+  });
 };

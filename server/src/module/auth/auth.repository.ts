@@ -21,3 +21,13 @@ export const createUser = async (body: RegisterInput) => {
     },
   });
 };
+
+export const findUserByResetPasswordToken = async (token: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      reset_password_token: token,
+      reset_password_token_expiry: { gt: new Date() },
+    },
+  });
+  return user;
+};

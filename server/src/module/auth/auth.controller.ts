@@ -27,3 +27,28 @@ export const loginController = asyncHandler(
     });
   },
 );
+
+export const forgotPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    await authService.forgotPassword(email);
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "If an account exists for this email, a password reset link has been sent.",
+    });
+  },
+);
+
+export const resetPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+    await authService.resetPassword(token, password);
+    return res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully.",
+    });
+  },
+);
