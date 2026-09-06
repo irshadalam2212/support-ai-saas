@@ -93,3 +93,13 @@ export const createRefreshToken = async (userId: string) => {
 
   return refreshToken;
 };
+
+export const forgotPassword = async (email: string) => {
+  const user = await authRepository.findUserByEmail(email);
+
+  if (!user) {
+    throw new AppError(404, "User not registered");
+  }
+
+  
+};

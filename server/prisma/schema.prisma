@@ -20,6 +20,9 @@ model User {
   password     String
   user_role    USER_ROLE @default(ADMIN)
 
+  reset_password_token        String?   @unique
+  reset_password_token_expiry DateTime?
+
   refreshTokens RefreshToken[]
 
   createdAt DateTime @default(now())
