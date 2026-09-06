@@ -7,12 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum USER_ROLE {
+  ADMIN
+  OWNER
+}
+
 model User {
-  id           String @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  email        String @unique
+  email        String    @unique
   company_name String
   password     String
+  user_role    USER_ROLE @default(ADMIN)
 
   refreshTokens RefreshToken[]
 
@@ -32,4 +38,8 @@ model RefreshToken {
   revokedAt DateTime?
 
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
 }

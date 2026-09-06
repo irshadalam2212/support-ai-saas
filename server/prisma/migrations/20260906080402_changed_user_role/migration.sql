@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `User` MODIFY `user_role` ENUM('ADMIN', 'OWNER') NOT NULL DEFAULT 'ADMIN';
