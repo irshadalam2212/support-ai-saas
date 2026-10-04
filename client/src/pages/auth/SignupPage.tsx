@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,10 +26,21 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { signupSchema, type SignupFormValues } from "@/schemas/auth.schema";
+import { registerAccount } from "@/lib/auth.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const registerMutation = useMutation({
+    mutationFn: registerAccount,
+    onSuccess: () => {
+      navigate("/login", {
+        state: { notice: "Your account is ready. Sign in to continue." },
+      });
+    },
+  });
 
   const {
     control,
@@ -45,11 +57,7 @@ export default function SignupPage() {
     },
   });
 
-  const onSubmit = async (data: SignupFormValues) => {
-    console.log("Signup data:", data);
-
-    // API integration will be added later.
-  };
+  const onSubmit = (data: SignupFormValues) => registerMutation.mutateAsync(data);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -123,6 +131,11 @@ export default function SignupPage() {
                   onSubmit={handleSubmit(onSubmit)}
                   className="space-y-5"
                 >
+                  {registerMutation.isError && (
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+                      {getApiErrorMessage(registerMutation.error)}
+                    </p>
+                  )}
                   {/* Full name */}
                   <div className="space-y-2">
                     <Label htmlFor="fullName">
@@ -333,10 +346,10 @@ export default function SignupPage() {
                   {/* Submit */}
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || registerMutation.isPending}
                     className="h-11 w-full rounded-lg"
                   >
-                    {isSubmitting
+                    {isSubmitting || registerMutation.isPending
                       ? "Creating account..."
                       : "Create account"}
 

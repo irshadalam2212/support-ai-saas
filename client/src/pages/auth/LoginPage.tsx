@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -23,9 +24,21 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
+import { loginAccount, saveAuthSession } from "@/lib/auth.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const notice = (location.state as { notice?: string } | null)?.notice;
+  const loginMutation = useMutation({
+    mutationFn: loginAccount,
+    onSuccess: (session) => {
+      saveAuthSession(session, session.rememberMe);
+      navigate("/dashboard", { replace: true });
+    },
+  });
 
   const {
     control,
@@ -40,11 +53,7 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    console.log("Login data:", data);
-
-    // API integration will be added later.
-  };
+  const onSubmit = (data: LoginFormValues) => loginMutation.mutateAsync(data);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -117,6 +126,16 @@ export default function LoginPage() {
                   onSubmit={handleSubmit(onSubmit)}
                   className="space-y-5"
                 >
+                  {notice && (
+                    <p className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm" role="status">
+                      {notice}
+                    </p>
+                  )}
+                  {loginMutation.isError && (
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+                      {getApiErrorMessage(loginMutation.error)}
+                    </p>
+                  )}
                   {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email">
@@ -242,10 +261,10 @@ export default function LoginPage() {
                   {/* Submit */}
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loginMutation.isPending}
                     className="h-11 w-full rounded-lg"
                   >
-                    {isSubmitting
+                    {isSubmitting || loginMutation.isPending
                       ? "Signing in..."
                       : "Sign in"}
 

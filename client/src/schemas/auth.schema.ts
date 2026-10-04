@@ -3,14 +3,16 @@ import { z } from "zod";
 export const signupSchema = z.object({
   fullName: z
     .string()
-    .min(2, "Full name must be at least 2 characters")
+    .trim()
+    .min(3, "Full name must be at least 3 characters")
     .max(100, "Full name is too long"),
 
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
 
   companyName: z
     .string()
-    .min(2, "Company name must be at least 2 characters")
+    .trim()
+    .min(3, "Company name must be at least 3 characters")
     .max(100, "Company name is too long"),
 
   password: z
@@ -28,7 +30,7 @@ export const signupSchema = z.object({
 export type SignupFormValues = z.infer<typeof signupSchema>;
 
 export const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
 
   password: z.string().min(1, "Password is required"),
 

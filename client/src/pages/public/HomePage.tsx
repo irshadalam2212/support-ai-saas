@@ -3,9 +3,7 @@ import {
   Bot,
   BrainCircuit,
   Check,
-  ChevronDown,
   FileText,
-  // Github,
   LineChart,
   MessageSquare,
   Play,
@@ -114,7 +112,7 @@ function Navbar() {
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-8 md:flex">
+        {/* <nav className="hidden items-center gap-8 md:flex">
           <a
             href="#features"
             className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -145,7 +143,7 @@ function Navbar() {
             Resources
             <ChevronDown className="h-3.5 w-3.5" />
           </a>
-        </nav>
+        </nav> */}
 
         {/* Actions */}
         <div className="flex items-center gap-3">
@@ -180,7 +178,7 @@ function Hero() {
     <section className="relative overflow-hidden">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute left-1/2 top-0 h-125 w-200 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
       </div>
 
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-6 py-10 lg:grid-cols-2 lg:px-8">
