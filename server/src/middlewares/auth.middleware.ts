@@ -7,10 +7,10 @@ interface AccessTokenPayload {
     type: "access";
 }
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_ACCESS_SECRET;
 
 if (!JWT_ACCESS_SECRET) {
-    throw new Error("JWT_ACCESS_SECRET is not defined");
+    throw new Error("ACCESS_TOKEN_SECRET (or JWT_ACCESS_SECRET) is not defined");
 }
 
 export const authMiddleware = (

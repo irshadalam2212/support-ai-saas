@@ -1,18 +1,18 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_ACCESS_SECRET;
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || "15m";
 const REFRESH_TOKEN_SECRET = (() => {
-  const secret = process.env.JWT_REFRESH_SECRET;
+  const secret = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_REFRESH_SECRET;
   if (!secret) {
-    throw new Error("JWT_REFRESH_SECRET is not defined");
+    throw new Error("REFRESH_TOKEN_SECRET (or JWT_REFRESH_SECRET) is not defined");
   }
   return secret;
 })();
 
 if (!ACCESS_TOKEN_SECRET) {
-  throw new Error("JWT_ACCESS_SECRET is not defined");
+  throw new Error("ACCESS_TOKEN_SECRET (or JWT_ACCESS_SECRET) is not defined");
 }
 export interface AccessTokenPayload {
   sub: string;
