@@ -28,6 +28,20 @@ export const loginController = asyncHandler(
   },
 );
 
+export const refreshController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const data = await authService.refresh(req.body.refreshToken);
+    res.status(200).json({ success: true, message: "Token refreshed", data });
+  },
+);
+
+export const logoutController = asyncHandler(
+  async (req: Request, res: Response) => {
+    await authService.logout(req.body.refreshToken);
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  },
+);
+
 export const forgotPasswordController = asyncHandler(
   async (req: Request, res: Response) => {
     const { email } = req.body;

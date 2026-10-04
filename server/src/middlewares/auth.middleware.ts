@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import { AppError } from "../utils/apperror";
 
 interface AccessTokenPayload {
-    userId: string;
+    sub: string;
+    type: "access";
 }
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
@@ -27,13 +28,13 @@ export const authMiddleware = (
             );
         }
 
-        const [scheme, token] = authorization.split(" ");
+        const [scheme, token, ...extra] = authorization.split(" ");
 
-        if (scheme !== "Bearer" || !token) {
-            return new AppError(
+        if (scheme !== "Bearer" || !token || extra.length > 0) {
+            return next(new AppError(
                 401,
                 "Invalid authorization header"
-            );
+            ));
         }
 
         const decoded = jwt.verify(
@@ -41,9 +42,11 @@ export const authMiddleware = (
             JWT_ACCESS_SECRET
         ) as AccessTokenPayload;
 
-        req.user = {
-            id: decoded.userId,
-        };
+        if (decoded.type !== "access" || !decoded.sub) {
+            throw new Error("Invalid access token payload");
+        }
+
+        req.user = { id: decoded.sub };
 
         next();
     } catch (error) {

@@ -21,7 +21,7 @@ export const sendPasswordResetEmail = async (
     subject: "Reset your SupportAI password",
     text: ` We received a request to reset your SupportAI password. 
             Reset your password using this link: 
-            ${resetUrl} This link will expire in 15 minutes. 
+            ${resetUrl} This link will expire in 10 minutes.
             If you didn't request a password reset, you can safely ignore this email. `,
 
     html: ` 
@@ -33,6 +33,6 @@ export const sendPasswordResetEmail = async (
          SupportAI </span> 
          </div> 
          <h1 style=" font-size: 24px; color: #111827; margin-bottom: 12px; "> 
-         Reset your password </h1> <p style=" color: #6b7280; line-height: 1.7; font-size: 14px; "> We received a request to reset your SupportAI password. Click the button below to create a new password. </p> <div style="margin: 28px 0;"> <a href="${resetUrl}" style=" display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; " > Reset password </a> </div> <p style=" color: #6b7280; font-size: 13px; line-height: 1.6; "> This link will expire in <strong>15 minutes</strong>. </p> <p style=" color: #9ca3af; font-size: 12px; line-height: 1.6; margin-top: 24px; "> If you didn't request a password reset, you can safely ignore this email. </p> <div style=" border-top: 1px solid #e5e7eb; margin-top: 28px; padding-top: 20px; "> <p style=" color: #9ca3af; font-size: 11px; margin: 0; "> © 2026 SupportAI. All rights reserved. </p> </div> </div> </div> `,
+         Reset your password </h1> <p style=" color: #6b7280; line-height: 1.7; font-size: 14px; "> We received a request to reset your SupportAI password. Click the button below to create a new password. </p> <div style="margin: 28px 0;"> <a href="${resetUrl}" style=" display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; " > Reset password </a> </div> <p style=" color: #6b7280; font-size: 13px; line-height: 1.6; "> This link will expire in <strong>10 minutes</strong>. </p> <p style=" color: #9ca3af; font-size: 12px; line-height: 1.6; margin-top: 24px; "> If you didn't request a password reset, you can safely ignore this email. </p> <div style=" border-top: 1px solid #e5e7eb; margin-top: 28px; padding-top: 20px; "> <p style=" color: #9ca3af; font-size: 11px; margin: 0; "> © 2026 SupportAI. All rights reserved. </p> </div> `,
   });
 };
