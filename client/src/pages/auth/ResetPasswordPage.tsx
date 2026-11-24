@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -9,7 +9,6 @@ import {
     Eye,
     EyeOff,
     LockKeyhole,
-    Sparkles,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,18 +19,43 @@ import {
     CardContent,
     CardHeader,
 } from "@/components/ui/card";
+import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/schemas/auth.schema";
+import { updatePassword } from "@/lib/auth.api";
+import { getApiErrorMessage } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 
 export default function ResetPasswordPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] =
         useState(false);
-
+    const [recoveryReady, setRecoveryReady] = useState<boolean | null>(null);
+    const [recoveryError, setRecoveryError] = useState("");
+    const [submitError, setSubmitError] = useState("");
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
 
-    const token = searchParams.get("token");
+    useEffect(() => {
+        let active = true;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) setRecoveryReady(true);
+        });
+
+        void supabase.auth.getSession().then(({ data, error }) => {
+            if (!active) return;
+            if (error) {
+                setRecoveryError(getApiErrorMessage(error));
+                setRecoveryReady(false);
+                return;
+            }
+            setRecoveryReady(data.session !== null);
+        });
+
+        return () => {
+            active = false;
+            subscription.unsubscribe();
+        };
+    }, []);
 
     const {
         control,
@@ -46,21 +70,19 @@ export default function ResetPasswordPage() {
     });
 
     const onSubmit = async (data: ResetPasswordFormValues) => {
-        console.log("Reset password:", {
-            token,
-            password: data.password,
-        });
-
-        // API integration will be added later.
-
-        // Example after successful API response:
-        // navigate("/login");
+        setSubmitError("");
+        try {
+            await updatePassword(data.password);
+            navigate("/dashboard", { replace: true });
+        } catch (error) {
+            setSubmitError(getApiErrorMessage(error));
+        }
     };
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-background">
+        <div className="min-h-dvh bg-background lg:grid lg:h-dvh lg:grid-cols-2 lg:overflow-hidden">
             {/* Background decoration */}
-            <div className="pointer-events-none absolute inset-0">
+            <div className="hidden">
                 <div className="absolute left-1/2 top-[-180px] h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
                 <div className="absolute bottom-[-200px] left-[-150px] h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
@@ -68,32 +90,13 @@ export default function ResetPasswordPage() {
                 <div className="absolute right-[-150px] top-1/2 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
             </div>
 
-            <div className="relative flex min-h-screen flex-col">
-                {/* Logo */}
-                <header className="flex justify-center px-6 py-8">
-                    <Link
-                        to="/"
-                        className="flex items-center gap-2"
-                    >
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                            <Sparkles className="h-4 w-4" />
-                        </div>
-
-                        <span className="text-lg font-bold tracking-tight">
-                            SupportAI
-                        </span>
-                    </Link>
-                </header>
-
+            <AuthBrandPanel />
+            <div className="relative flex min-h-[calc(100dvh-16rem)] flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:col-start-2 lg:h-dvh lg:min-h-0 lg:overflow-y-auto">
                 {/* Main */}
-                <main className="flex flex-1 items-start justify-center px-4 pb-12 pt-4 sm:px-6">
+                <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
                     <div className="w-full max-w-md">
                         {/* Heading */}
                         <div className="mb-8 text-center">
-                            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                                <LockKeyhole className="h-5 w-5 text-primary" />
-                            </div>
-
                             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                                 Create a new password
                             </h1>
@@ -129,6 +132,24 @@ export default function ResetPasswordPage() {
                                     onSubmit={handleSubmit(onSubmit)}
                                     className="space-y-5"
                                 >
+                                    {recoveryReady === null && (
+                                        <p className="text-sm text-muted-foreground" role="status">
+                                            Verifying your password recovery link…
+                                        </p>
+                                    )}
+                                    {recoveryReady === false && (
+                                        <p className="text-sm text-destructive" role="alert">
+                                            {recoveryError || "This recovery link is invalid or expired."} {" "}
+                                            <Link to="/forgot-password" className="font-medium underline">
+                                                Request a new link
+                                            </Link>
+                                        </p>
+                                    )}
+                                    {submitError && (
+                                        <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+                                            {submitError}
+                                        </p>
+                                    )}
                                     {/* New Password */}
                                     <div className="space-y-2">
                                         <Label htmlFor="password">
@@ -154,6 +175,7 @@ export default function ResetPasswordPage() {
                                                         className="h-11 rounded-lg pl-10 pr-10"
                                                         aria-invalid={!!errors.password}
                                                         autoComplete="new-password"
+                                                        disabled={recoveryReady !== true || isSubmitting}
                                                     />
 
                                                     <button
@@ -214,6 +236,7 @@ export default function ResetPasswordPage() {
                                                             !!errors.confirmPassword
                                                         }
                                                         autoComplete="new-password"
+                                                        disabled={recoveryReady !== true || isSubmitting}
                                                     />
 
                                                     <button
@@ -264,7 +287,7 @@ export default function ResetPasswordPage() {
                                     {/* Submit */}
                                     <Button
                                         type="submit"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || recoveryReady !== true}
                                         className="h-11 w-full rounded-lg"
                                     >
                                         {isSubmitting
@@ -301,7 +324,7 @@ export default function ResetPasswordPage() {
                 </main>
 
                 {/* Footer */}
-                <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
+                <footer className="hidden">
                     © 2026 SupportAI. All rights reserved.
                 </footer>
             </div>

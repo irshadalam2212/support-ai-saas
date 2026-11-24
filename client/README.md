@@ -1,5 +1,18 @@
 # React + TypeScript + Vite
 
+## Local development
+
+Copy `.env.example` to `.env.local`, then set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the Supabase project settings. A legacy anon key can be used in the publishable-key variable. These browser variables are public; never use a Supabase secret or service-role key in a `VITE_` variable.
+
+In Supabase Dashboard → Authentication → URL Configuration, set the local Site URL to `http://localhost:5173` and allow these redirect URLs:
+
+- `http://localhost:5173/auth/callback` for email confirmation.
+- `http://localhost:5173/reset-password` for password recovery.
+
+`src/lib/supabase.ts` exports the single browser client. Its Auth client persists the browser session, refreshes tokens, and detects auth redirects. The login and signup screens will be switched to this client in the next auth task.
+
+Run the app with `npm run dev`. The separate `VITE_FASTAPI_BASE_URL` configures the FastAPI API; `VITE_API_BASE_URL` still targets the legacy Express auth API during migration.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

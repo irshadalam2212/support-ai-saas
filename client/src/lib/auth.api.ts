@@ -1,43 +1,57 @@
-import { apiRequest } from "./api";
 import type { LoginFormValues, SignupFormValues } from "@/schemas/auth.schema";
+import { supabase } from "@/lib/supabase";
+import { ensureInitialWorkspace, syncCurrentProfile } from "@/lib/fastapi.api";
 
-export type AuthUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
+export type SignupResult = {
+  requiresEmailConfirmation: boolean;
 };
 
-export type LoginResponse = {
-  access_token: string;
-  refresh_token: string;
-  user: AuthUser;
-};
-
-export function registerAccount(values: SignupFormValues) {
-  return apiRequest<{ user: Pick<AuthUser, "id" | "name" | "email"> }>("/auth/register", {
-    name: values.fullName,
-    email: values.email,
-    company_name: values.companyName,
-    password: values.password,
-  });
-}
-
-export async function loginAccount(values: LoginFormValues) {
-  const response = await apiRequest<LoginResponse>("/auth/login", {
+export async function registerAccount(values: SignupFormValues): Promise<SignupResult> {
+  const { data, error } = await supabase.auth.signUp({
     email: values.email,
     password: values.password,
+    options: {
+      data: {
+        full_name: values.fullName,
+        company_name: values.companyName,
+      },
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
   });
-  return { ...response.data, rememberMe: values.rememberMe };
+
+  if (error) throw error;
+
+  if (data.session) {
+    await syncCurrentProfile(data.session.access_token);
+    await ensureInitialWorkspace(data.session.access_token);
+  }
+
+  return { requiresEmailConfirmation: data.session === null };
 }
 
-export function saveAuthSession(session: LoginResponse, rememberMe: boolean) {
-  sessionStorage.removeItem("supportai.auth");
-  localStorage.removeItem("supportai.auth");
-  const storage = rememberMe ? localStorage : sessionStorage;
-  storage.setItem("supportai.auth", JSON.stringify({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token,
-    user: session.user,
-  }));
+export async function loginAccount(values: LoginFormValues): Promise<void> {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: values.email,
+    password: values.password,
+  });
+
+  if (error) throw error;
+  if (data.session) {
+    await syncCurrentProfile(data.session.access_token);
+    await ensureInitialWorkspace(data.session.access_token);
+  }
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+
+  if (error) throw error;
+}
+
+export async function updatePassword(password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) throw error;
 }

@@ -11,32 +11,30 @@ import {
   // Github,
   LockKeyhole,
   Mail,
-  Sparkles,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import {
   Card,
   CardContent,
-  CardHeader,
 } from "@/components/ui/card";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
-import { loginAccount, saveAuthSession } from "@/lib/auth.api";
+import { loginAccount } from "@/lib/auth.api";
 import { getApiErrorMessage } from "@/lib/api";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const notice = (location.state as { notice?: string } | null)?.notice;
+  const locationState = location.state as { notice?: string; returnTo?: string } | null;
+  const notice = locationState?.notice;
   const loginMutation = useMutation({
     mutationFn: loginAccount,
-    onSuccess: (session) => {
-      saveAuthSession(session, session.rememberMe);
-      navigate("/dashboard", { replace: true });
+    onSuccess: () => {
+      navigate(locationState?.returnTo ?? "/dashboard", { replace: true });
     },
   });
 
@@ -49,16 +47,15 @@ export default function LoginPage() {
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
   });
 
   const onSubmit = (data: LoginFormValues) => loginMutation.mutateAsync(data);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="min-h-dvh bg-background lg:grid lg:h-dvh lg:grid-cols-2 lg:overflow-hidden">
       {/* Background decoration */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="hidden">
         <div className="absolute left-1/2 top-[-180px] h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="absolute bottom-[-200px] left-[-150px] h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
@@ -66,32 +63,13 @@ export default function LoginPage() {
         <div className="absolute right-[-150px] top-1/2 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <div className="relative flex min-h-screen flex-col">
-        {/* Logo */}
-        <header className="flex justify-center px-6 py-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <Sparkles className="h-4 w-4" />
-            </div>
-
-            <span className="text-lg font-bold tracking-tight">
-              SupportAI
-            </span>
-          </Link>
-        </header>
-
+      <AuthBrandPanel />
+      <div className="relative flex min-h-[calc(100dvh-16rem)] flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:col-start-2 lg:h-dvh lg:min-h-0 lg:overflow-y-auto">
         {/* Main */}
-        <main className="flex flex-1 items-start justify-center px-4 pb-12 pt-4 sm:px-6">
+        <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
             {/* Heading */}
             <div className="mb-8 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                 Welcome back
               </h1>
@@ -103,24 +81,6 @@ export default function LoginPage() {
 
             {/* Login Card */}
             <Card className="rounded-2xl border shadow-xl shadow-black/5">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-4 py-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <LockKeyhole className="h-4 w-4 text-primary" />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium">
-                      Welcome back
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      Enter your credentials to continue.
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-
               <CardContent className="pt-6">
                 <form
                   onSubmit={handleSubmit(onSubmit)}
@@ -236,28 +196,6 @@ export default function LoginPage() {
                     )}
                   </div>
 
-                  {/* Remember Me */}
-                  <Controller
-                    name="rememberMe"
-                    control={control}
-                    render={({ field }) => (
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          id="rememberMe"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-
-                        <Label
-                          htmlFor="rememberMe"
-                          className="cursor-pointer text-sm font-normal text-muted-foreground"
-                        >
-                          Remember me
-                        </Label>
-                      </div>
-                    )}
-                  />
-
                   {/* Submit */}
                   <Button
                     type="submit"
@@ -333,7 +271,7 @@ export default function LoginPage() {
         </main>
 
         {/* Footer */}
-        <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
+        <footer className="hidden">
           © 2026 SupportAI. All rights reserved.
         </footer>
       </div>

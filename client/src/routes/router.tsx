@@ -20,11 +20,18 @@ import SignupPage from "@/pages/auth/SignupPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPassword";
+import AuthCallbackPage from "@/pages/auth/AuthCallbackPage";
+import BackendHealthPage from "@/pages/dev/BackendHealthPage";
+import RequireAuth from "@/components/auth/RequireAuth";
 
 export const router = createBrowserRouter([
     {
         path: "/",
         element: <LandingPage />,
+    },
+    {
+        path: "/dev/health",
+        element: <BackendHealthPage />,
     },
     {
         path: "/signup",
@@ -35,6 +42,10 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
     },
     {
+        path: "/auth/callback",
+        element: <AuthCallbackPage />,
+    },
+    {
         path: "/reset-password",
         element: <ResetPasswordPage />
     },
@@ -43,13 +54,16 @@ export const router = createBrowserRouter([
         element: <ForgotPasswordPage />
     },
     {
-        path: "/admin",
-        element: <AdminDashboardPage />,
-    },
-    {
-        path: "/dashboard",
-        element: <OrganizationLayout />,
+        element: <RequireAuth />,
         children: [
+            {
+                path: "/admin",
+                element: <AdminDashboardPage />,
+            },
+            {
+                path: "/dashboard",
+                element: <OrganizationLayout />,
+                children: [
             {
                 index: true,
                 element: <OverviewPage />,
@@ -102,6 +116,8 @@ export const router = createBrowserRouter([
                 path: "/dashboard/billing",
                 element: <Billing />
             }
+                ],
+            },
         ],
     },
     {

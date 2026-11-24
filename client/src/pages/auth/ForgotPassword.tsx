@@ -6,14 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
   Mail,
-  Sparkles,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import {
   Card,
   CardContent,
@@ -24,9 +23,13 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordFormValues,
 } from "@/schemas/auth.schema";
+import { requestPasswordReset } from "@/lib/auth.api";
+import { getApiErrorMessage } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const [emailSent, setEmailSent] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const {
     control,
@@ -40,24 +43,24 @@ export default function ForgotPasswordPage() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
-    console.log("Send reset link:", data);
-
-    // API integration will be added later.
-
-    // Example:
-    // await forgotPassword(data.email);
-
-    setEmailSent(true);
+    setErrorMessage("");
+    try {
+      await requestPasswordReset(data.email);
+      setSubmittedEmail(data.email);
+      setEmailSent(true);
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error));
+    }
   };
 
   if (emailSent) {
-    return <ResetLinkSent email={""} />;
+    return <ResetLinkSent email={submittedEmail} />;
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="min-h-dvh bg-background lg:grid lg:h-dvh lg:grid-cols-2 lg:overflow-hidden">
       {/* Background decoration */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="hidden">
         <div className="absolute left-1/2 top-[-180px] h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="absolute bottom-[-200px] left-[-150px] h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
@@ -65,32 +68,13 @@ export default function ForgotPasswordPage() {
         <div className="absolute right-[-150px] top-1/2 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <div className="relative flex min-h-screen flex-col">
-        {/* Logo */}
-        <header className="flex justify-center px-6 py-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <Sparkles className="h-4 w-4" />
-            </div>
-
-            <span className="text-lg font-bold tracking-tight">
-              SupportAI
-            </span>
-          </Link>
-        </header>
-
+      <AuthBrandPanel />
+      <div className="relative flex min-h-[calc(100dvh-16rem)] flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:col-start-2 lg:h-dvh lg:min-h-0 lg:overflow-y-auto">
         {/* Main */}
-        <main className="flex flex-1 items-start justify-center px-4 pb-12 pt-4 sm:px-6">
+        <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
             {/* Heading */}
             <div className="mb-8 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <Mail className="h-5 w-5 text-primary" />
-              </div>
-
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                 Forgot your password?
               </h1>
@@ -126,6 +110,11 @@ export default function ForgotPasswordPage() {
                   onSubmit={handleSubmit(onSubmit)}
                   className="space-y-5"
                 >
+                  {errorMessage && (
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+                      {errorMessage}
+                    </p>
+                  )}
                   {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email">
@@ -198,7 +187,7 @@ export default function ForgotPasswordPage() {
         </main>
 
         {/* Footer */}
-        <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
+        <footer className="hidden">
           © 2026 SupportAI. All rights reserved.
         </footer>
       </div>
@@ -212,9 +201,9 @@ export default function ForgotPasswordPage() {
 
 function ResetLinkSent({ email }: { email: string }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="min-h-dvh bg-background lg:grid lg:h-dvh lg:grid-cols-2 lg:overflow-hidden">
       {/* Background decoration */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="hidden">
         <div className="absolute left-1/2 top-[-180px] h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="absolute bottom-[-200px] left-[-150px] h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
@@ -222,31 +211,12 @@ function ResetLinkSent({ email }: { email: string }) {
         <div className="absolute right-[-150px] top-1/2 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <div className="relative flex min-h-screen flex-col">
-        {/* Logo */}
-        <header className="flex justify-center px-6 py-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <Sparkles className="h-4 w-4" />
-            </div>
-
-            <span className="text-lg font-bold tracking-tight">
-              SupportAI
-            </span>
-          </Link>
-        </header>
-
+      <AuthBrandPanel />
+      <div className="relative flex min-h-[calc(100dvh-16rem)] flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:col-start-2 lg:h-dvh lg:min-h-0 lg:overflow-y-auto">
         {/* Main */}
-        <main className="flex flex-1 items-start justify-center px-4 pb-12 pt-4 sm:px-6">
+        <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
             <div className="mb-8 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <CheckCircle2 className="h-6 w-6 text-primary" />
-              </div>
-
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                 Check your email
               </h1>
@@ -299,7 +269,7 @@ function ResetLinkSent({ email }: { email: string }) {
         </main>
 
         {/* Footer */}
-        <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
+        <footer className="hidden">
           © 2026 SupportAI. All rights reserved.
         </footer>
       </div>
