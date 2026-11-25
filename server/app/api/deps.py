@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import verify_supabase_access_token
 from app.db.session import get_db
+from app.db.workspace_context import use_workspace
 from app.models.workspace import Workspace, WorkspaceMember
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -60,6 +61,23 @@ def require_workspace_role(*allowed_roles: str):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Your workspace role cannot perform this action",
             )
+        return access
+
+    return dependency
+
+
+def require_workspace_scope(*allowed_roles: str):
+    """Check the caller's role, then scope the database session to that workspace.
+
+    Use this for every endpoint that touches support data (customers and tickets).
+    """
+    check_role = require_workspace_role(*allowed_roles)
+
+    def dependency(
+        access: WorkspaceAccess = Depends(check_role),
+        db: Session = Depends(get_db),
+    ) -> WorkspaceAccess:
+        use_workspace(db, access.workspace.id)
         return access
 
     return dependency

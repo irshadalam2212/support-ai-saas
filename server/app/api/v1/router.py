@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints.auth import router as auth_router
+from app.api.v1.endpoints.customers import router as customers_router
 from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.endpoints.invitations import router as invitations_router
 from app.api.v1.endpoints.members import router as members_router
@@ -14,3 +15,4 @@ api_router.include_router(profiles_router)
 api_router.include_router(invitations_router)
 api_router.include_router(workspaces_router)
 api_router.include_router(members_router)
+api_router.include_router(customers_router)

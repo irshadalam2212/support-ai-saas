@@ -56,6 +56,20 @@ The protected `GET /api/v1/auth/me` endpoint requires `Authorization: Bearer <ac
 
 An owner can manage admins, agents, and customers; an admin can manage agents and customers only. The owner cannot be changed or removed, so ownership moves only through the transfer endpoint, which locks both membership rows and always leaves exactly one owner. Removing a member revokes pending invitations sent by or to them, and demoting an admin revokes the invitations they sent.
 
+## Customers
+
+All paths start with `/api/v1/workspaces/{workspace_id}/customers`. Owners, admins, and agents may use them; deleting is limited to owners and admins. Customers have no access.
+
+| Endpoint | Notes |
+|---|---|
+| `GET` | `q` searches name, email, and company; `sort` is `name`, `-name`, `created_at`, or `-created_at`; `page` and `page_size` (up to 100) |
+| `POST` | `name` and `email` are required; `phone` and `company` are optional |
+| `GET /{customer_id}` | One customer |
+| `PATCH /{customer_id}` | Changes only the fields sent |
+| `DELETE /{customer_id}` | `409` if the customer has tickets |
+
+An email address is unique within a workspace (`409` otherwise). Each request checks membership and then scopes the database transaction to the workspace (`require_workspace_scope`).
+
 ## Database migrations
 
 Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The migrations create:
@@ -66,7 +80,7 @@ Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The mi
 - `public.workspace_invitations`, linked to a workspace and inviter profile, with a hashed token, invited email, role, status, expiry, and creation timestamp. A partial unique index prevents multiple pending invitations for the same workspace/email; ownership cannot be granted through invitations.
 
 - `0004_restricted_roles` removes direct browser writes, protects `alembic_version`, and creates the `supportai_app` role for the API.
-- `0005_customers_and_tickets` (PostgreSQL 15 or newer) adds `public.customers`, `public.tickets`, `public.ticket_messages`, and `public.ticket_events`, plus a per-workspace ticket counter. No endpoints use them yet.
+- `0005_customers_and_tickets` (PostgreSQL 15 or newer) adds `public.customers`, `public.tickets`, `public.ticket_messages`, and `public.ticket_events`, plus a per-workspace ticket counter. Customer endpoints use `customers`; ticket endpoints do not exist yet.
 
 The support tables are workspace-owned. Their foreign keys include `workspace_id`, so a row cannot refer to another workspace's customer, member, or ticket. Browser roles have no access at all. Row Level Security limits the `supportai_app` role to the workspace chosen with `app.db.workspace_context.use_workspace`, which must be called only after checking membership; with no workspace chosen it sees no rows. The API role cannot delete tickets, messages, or history, or edit messages and history. A connection as the table owner is not limited by these policies.
 

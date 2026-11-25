@@ -1,9 +1,10 @@
 from datetime import datetime
-import re
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.schemas.common import normalize_email
 
 WorkspaceRoleName = Literal["OWNER", "ADMIN", "AGENT", "CUSTOMER"]
 InvitationRoleName = Literal["ADMIN", "AGENT", "CUSTOMER"]
@@ -45,10 +46,7 @@ class WorkspaceInvitationCreateRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_and_validate_email(cls, value: str) -> str:
-        value = value.strip().lower()
-        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
-            raise ValueError("Enter a valid email address")
-        return value
+        return normalize_email(value)
 
 
 class WorkspaceInvitationResponse(BaseModel):
