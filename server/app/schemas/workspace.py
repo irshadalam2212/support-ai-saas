@@ -18,6 +18,14 @@ class WorkspaceResponse(BaseModel):
     created_at: datetime
 
 
+class WorkspaceMemberResponse(BaseModel):
+    user_id: UUID
+    email: str | None
+    full_name: str | None
+    role: WorkspaceRoleName
+    joined_at: datetime
+
+
 class WorkspaceUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

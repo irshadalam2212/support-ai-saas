@@ -12,7 +12,12 @@ from app.api.deps import WorkspaceAccess, get_current_claims, get_workspace_acce
 from app.db.session import get_db
 from app.models.profile import Profile
 from app.models.workspace import Workspace, WorkspaceMember
-from app.schemas.workspace import WorkspaceCreateRequest, WorkspaceResponse, WorkspaceUpdateRequest
+from app.schemas.workspace import (
+    WorkspaceCreateRequest,
+    WorkspaceMemberResponse,
+    WorkspaceResponse,
+    WorkspaceUpdateRequest,
+)
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
@@ -199,3 +204,30 @@ def update_workspace(
     db.commit()
     db.refresh(access.workspace)
     return _to_response(access.workspace, access.membership.role)
+
+
+@router.get(
+    "/{workspace_id}/members",
+    response_model=list[WorkspaceMemberResponse],
+    summary="List workspace members (owner or admin)",
+)
+def list_workspace_members(
+    access: WorkspaceAccess = Depends(require_workspace_role("OWNER", "ADMIN")),
+    db: Session = Depends(get_db),
+) -> list[WorkspaceMemberResponse]:
+    rows = db.execute(
+        select(WorkspaceMember, Profile)
+        .join(Profile, Profile.id == WorkspaceMember.user_id)
+        .where(WorkspaceMember.workspace_id == access.workspace.id)
+        .order_by(WorkspaceMember.created_at, WorkspaceMember.user_id)
+    ).all()
+    return [
+        WorkspaceMemberResponse(
+            user_id=member.user_id,
+            email=profile.email,
+            full_name=profile.full_name,
+            role=member.role,
+            joined_at=member.created_at,
+        )
+        for member, profile in rows
+    ]

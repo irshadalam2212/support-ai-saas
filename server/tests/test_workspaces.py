@@ -27,15 +27,28 @@ class FakeSession:
     def __init__(self, user_id: UUID):
         self.user_id = user_id
         self.profile = Profile(id=user_id)
+        self.profiles = [self.profile]
         self.workspaces: list[Workspace] = []
         self.members: list[WorkspaceMember] = []
 
     def get(self, model, record_id):
-        if model is Profile and record_id == self.user_id:
-            return self.profile
+        if model is Profile:
+            return next((profile for profile in self.profiles if profile.id == record_id), None)
         return None
 
     def execute(self, statement):
+        entities = [description["entity"] for description in statement.column_descriptions]
+        if entities == [WorkspaceMember, Profile]:
+            workspace_filter = statement.compile().params.get("workspace_id_1")
+            rows = []
+            for member in self.members:
+                if workspace_filter is not None and member.workspace_id != workspace_filter:
+                    continue
+                profile = next((item for item in self.profiles if item.id == member.user_id), None)
+                if profile is not None:
+                    rows.append((member, profile))
+            return FakeResult(rows)
+
         workspaces_by_id = {workspace.id: workspace for workspace in self.workspaces}
         parameters = statement.compile().params
         workspace_filter = parameters.get("id_1")
@@ -206,3 +219,56 @@ def test_user_can_create_additional_workspace_and_becomes_owner():
     assert second.json()["slug"] == "acme-support-2"
     assert len(session.workspaces) == 2
     assert all(member.role == "OWNER" for member in session.members)
+
+
+def test_only_workspace_owner_or_admin_can_list_members():
+    owner_id = uuid4()
+    agent_id = uuid4()
+    workspace = Workspace(
+        id=uuid4(), name="Acme", slug="acme", created_by=owner_id, created_at=datetime.now(UTC)
+    )
+    joined_at = datetime.now(UTC)
+    owner = Profile(id=owner_id, email="owner@acme.test", full_name="Workspace Owner")
+    agent = Profile(id=agent_id, email="agent@acme.test", full_name="Support Agent")
+    session = FakeSession(owner_id)
+    session.workspaces.append(workspace)
+    session.profiles = [owner, agent]
+    session.members.extend([
+        WorkspaceMember(workspace_id=workspace.id, user_id=owner_id, role="OWNER", created_at=joined_at),
+        WorkspaceMember(workspace_id=workspace.id, user_id=agent_id, role="AGENT", created_at=joined_at),
+    ])
+    claims = {"sub": str(owner_id)}
+    app.dependency_overrides[get_current_claims] = lambda: claims
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def list_members():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            owner_response = await client.get(f"/api/v1/workspaces/{workspace.id}/members")
+            claims["sub"] = str(agent_id)
+            session.user_id = agent_id
+            agent_response = await client.get(f"/api/v1/workspaces/{workspace.id}/members")
+            return owner_response, agent_response
+
+    try:
+        owner_response, agent_response = asyncio.run(list_members())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert owner_response.status_code == 200
+    assert owner_response.json() == [
+        {
+            "user_id": str(owner_id),
+            "email": "owner@acme.test",
+            "full_name": "Workspace Owner",
+            "role": "OWNER",
+            "joined_at": joined_at.isoformat().replace("+00:00", "Z"),
+        },
+        {
+            "user_id": str(agent_id),
+            "email": "agent@acme.test",
+            "full_name": "Support Agent",
+            "role": "AGENT",
+            "joined_at": joined_at.isoformat().replace("+00:00", "Z"),
+        },
+    ]
+    assert agent_response.status_code == 403
