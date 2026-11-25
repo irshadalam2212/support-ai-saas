@@ -1,4 +1,5 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { LoaderCircle } from "lucide-react";
+import { Navigate, Outlet, useLocation } from "react-router";
 
 import { useAuth } from "@/components/auth/AuthContext";
 
@@ -8,14 +9,16 @@ export default function RequireAuth() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 text-sm text-muted-foreground" role="status">
+      <main role="status" className="flex min-h-dvh items-center justify-center gap-2 px-6 text-sm text-muted-foreground">
+        <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
         Checking your session…
       </main>
     );
   }
 
   if (!session) {
-    return <Navigate to="/login" replace state={{ returnTo: location.pathname }} />;
+    const returnTo = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to="/login" replace state={{ returnTo }} />;
   }
 
   return <Outlet />;

@@ -1,33 +1,58 @@
-import { useNavigate } from "react-router";
+import type { LucideIcon } from "lucide-react";
+import { Link } from "react-router";
 
+import EmptyState from "@/components/shared/EmptyState";
+import Logo from "@/components/shared/Logo";
+import PageHeader from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 type FeatureStatusPageProps = {
   title: string;
   description: string;
-  phase?: string;
+  icon: LucideIcon;
+  /** Short status shown beside the title. */
+  status?: string;
+  /** Set for pages rendered outside the app layout. */
+  standalone?: boolean;
+  backTo?: string;
+  backLabel?: string;
 };
 
-export default function FeatureStatusPage({ title, description, phase }: FeatureStatusPageProps) {
-  const navigate = useNavigate();
-  return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </header>
-      <Card className="space-y-4 p-6 sm:p-8">
-        <Badge variant="outline">{phase ? `Planned · ${phase}` : "Not connected yet"}</Badge>
-        <div>
-          <h2 className="text-lg font-semibold">This feature is not live yet</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            This section will show workspace data after its backend is implemented. Sample records and controls have been removed so the page does not imply that changes are being saved.
-          </p>
-        </div>
-        <Button onClick={() => navigate("/dashboard")}>Return to workspace overview</Button>
+export default function FeatureStatusPage({
+  title,
+  description,
+  icon,
+  status = "Coming soon",
+  standalone = false,
+  backTo = "/overview",
+  backLabel = "Back to overview",
+}: FeatureStatusPageProps) {
+  const content = (
+    <div className="space-y-6">
+      <PageHeader title={title} description={description} actions={<Badge variant="accent">{status}</Badge>} />
+      <Card>
+        <EmptyState
+          icon={icon}
+          title="Not available yet"
+          description="There is nothing to view or change here for now."
+          action={<Link to={backTo} className={buttonVariants({ variant: "outline" })}>{backLabel}</Link>}
+        />
       </Card>
+    </div>
+  );
+
+  if (!standalone) return content;
+
+  return (
+    <div className="min-h-dvh bg-muted/30">
+      <header className="border-b bg-background">
+        <div className="mx-auto flex h-14 max-w-3xl items-center px-4">
+          <Link to="/" className="rounded-md"><Logo /></Link>
+        </div>
+      </header>
+      <main className="mx-auto max-w-3xl px-4 py-8">{content}</main>
     </div>
   );
 }

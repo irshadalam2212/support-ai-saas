@@ -1,11 +1,13 @@
+import { Inbox } from "lucide-react";
+
 import FeatureStatusPage from "@/components/shared/FeatureStatusPage";
 
 export default function ConversationsPage() {
   return (
     <FeatureStatusPage
       title="Conversations"
-      description="Review customer tickets, messages, assignments, and resolution status."
-      phase="Phase 4 · Core support"
+      description="Customer tickets, replies, internal notes, assignments, and status."
+      icon={Inbox}
     />
   );
 }

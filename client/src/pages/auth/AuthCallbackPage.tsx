@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { CircleCheck, LoaderCircle } from "lucide-react";
+import { CircleAlert, LoaderCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 
-import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AuthLayout from "@/components/auth/AuthLayout";
+import { buttonVariants } from "@/components/ui/button";
 import { ensureInitialWorkspace, syncCurrentProfile } from "@/lib/fastapi.api";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export default function AuthCallbackPage() {
   const [message, setMessage] = useState("Verifying your email link…");
-  const [completed, setCompleted] = useState(false);
+  // Only set when something went wrong; success navigates straight to the overview.
+  const [failed, setFailed] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,11 +23,11 @@ export default function AuthCallbackPage() {
       try {
         await syncCurrentProfile(accessToken);
         await ensureInitialWorkspace(accessToken);
-        if (active) navigate("/dashboard", { replace: true });
+        if (active) navigate("/overview", { replace: true });
       } catch {
         if (!active) return;
         setMessage("Your email is confirmed, but we couldn't finish setting up your workspace. Sign in again to retry.");
-        setCompleted(true);
+        setFailed(true);
       }
     };
 
@@ -37,12 +39,12 @@ export default function AuthCallbackPage() {
       if (!active) return;
       if (error) {
         setMessage("We could not verify this link. Request a new confirmation email and try again.");
-        setCompleted(true);
+        setFailed(true);
       } else if (data.session) {
         void syncAndContinue(data.session.access_token);
       } else {
         setMessage("This link is invalid or expired. Request a new confirmation email and try again.");
-        setCompleted(true);
+        setFailed(true);
       }
     });
 
@@ -53,33 +55,23 @@ export default function AuthCallbackPage() {
   }, [navigate]);
 
   return (
-    <div className="min-h-dvh bg-background lg:grid lg:h-dvh lg:grid-cols-2 lg:overflow-hidden">
-      <AuthBrandPanel />
-      <main className="flex min-h-[calc(100dvh-16rem)] items-center justify-center px-4 py-10 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:col-start-2 lg:h-dvh lg:min-h-0 lg:overflow-y-auto lg:px-10">
-      <Card className="w-full max-w-md">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            {completed ? (
-              <CircleCheck aria-hidden="true" className="size-5" />
-            ) : (
-              <LoaderCircle aria-hidden="true" className="size-5 animate-spin" />
-            )}
-          </div>
-          <CardTitle>{completed ? "Email confirmation" : "Confirming your email"}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5 text-center">
-          <p aria-live="polite" className="text-sm text-muted-foreground">{message}</p>
-          {completed && (
-            <Link
-              to="/login"
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80"
-            >
-              Back to sign in
-            </Link>
+    <AuthLayout title={failed ? "Email confirmation" : "Confirming your email"}>
+      <div className="flex flex-col items-center text-center">
+        <span
+          className={cn(
+            "flex size-12 items-center justify-center rounded-xl",
+            failed ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary",
           )}
-        </CardContent>
-      </Card>
-      </main>
-    </div>
+        >
+          {failed
+            ? <CircleAlert aria-hidden="true" className="size-6" />
+            : <LoaderCircle aria-hidden="true" className="size-6 animate-spin" />}
+        </span>
+        <p aria-live="polite" className="mt-4 text-sm leading-6 text-muted-foreground">{message}</p>
+        {failed && (
+          <Link to="/login" className={cn(buttonVariants(), "mt-6 h-11 w-full")}>Back to sign in</Link>
+        )}
+      </div>
+    </AuthLayout>
   );
 }

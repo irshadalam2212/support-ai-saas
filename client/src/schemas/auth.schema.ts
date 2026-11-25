@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+/** Shared by the password schema and the on-screen requirements checklist. */
+export const passwordRules = [
+  { label: "At least 8 characters", pattern: /^[\s\S]{8,}$/, message: "Password must be at least 8 characters" },
+  { label: "One uppercase letter", pattern: /[A-Z]/, message: "Password must contain an uppercase letter" },
+  { label: "One lowercase letter", pattern: /[a-z]/, message: "Password must contain a lowercase letter" },
+  { label: "One number", pattern: /[0-9]/, message: "Password must contain a number" },
+];
+
+const newPasswordSchema = passwordRules.reduce(
+  (schema, rule) => schema.regex(rule.pattern, rule.message),
+  z.string(),
+);
+
 export const signupSchema = z.object({
   fullName: z
     .string()
@@ -15,12 +28,7 @@ export const signupSchema = z.object({
     .min(3, "Company name must be at least 3 characters")
     .max(100, "Company name is too long"),
 
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain an uppercase letter")
-    .regex(/[a-z]/, "Password must contain a lowercase letter")
-    .regex(/[0-9]/, "Password must contain a number"),
+  password: newPasswordSchema,
 
   terms: z.boolean().refine((value) => value === true, {
     message: "You must accept the terms and privacy policy",
@@ -39,12 +47,7 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const resetPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain an uppercase letter")
-      .regex(/[a-z]/, "Password must contain a lowercase letter")
-      .regex(/[0-9]/, "Password must contain a number"),
+    password: newPasswordSchema,
 
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
@@ -56,6 +59,6 @@ export const resetPasswordSchema = z
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().trim().email("Please enter a valid email address"),
 });
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;

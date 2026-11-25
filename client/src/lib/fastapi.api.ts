@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { ApiError, getErrorDetail } from "@/lib/api";
+
 const API_BASE_URL = (
   import.meta.env.VITE_FASTAPI_BASE_URL || "http://localhost:8000/api/v1"
 ).replace(/\/$/, "");
@@ -84,15 +86,15 @@ async function workspaceRequest(
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (error) {
-    throw new Error("Could not reach SupportAI to load your workspace. Please try again.", { cause: error });
+    throw new Error("Could not reach SupportAI. Check your connection and try again.", { cause: error });
   }
 
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = z.object({ detail: z.string().optional() }).safeParse(result);
-    throw new Error(detail.success && detail.data.detail
-      ? detail.data.detail
-      : `Workspace request failed (HTTP ${response.status}).`);
+    throw new ApiError(
+      getErrorDetail(result) ?? `Workspace request failed (HTTP ${response.status}).`,
+      response.status,
+    );
   }
   return result;
 }
@@ -100,14 +102,14 @@ async function workspaceRequest(
 export async function getWorkspaces(accessToken: string): Promise<WorkspaceSummary[]> {
   const result = await workspaceRequest("/workspaces", accessToken, "GET");
   const parsed = z.array(workspaceResponseSchema).safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace list.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace list.");
   return parsed.data;
 }
 
 export async function ensureInitialWorkspace(accessToken: string): Promise<WorkspaceSummary> {
   const result = await workspaceRequest("/workspaces/onboarding", accessToken, "POST");
   const parsed = workspaceResponseSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace response.");
   return parsed.data;
 }
 
@@ -118,7 +120,7 @@ export async function getWorkspace(accessToken: string, workspaceId: string): Pr
     "GET",
   );
   const parsed = workspaceResponseSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace response.");
   return parsed.data;
 }
 
@@ -132,7 +134,7 @@ export async function createWorkspace(
     description: description.trim() || null,
   });
   const parsed = workspaceResponseSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace response.");
   return parsed.data;
 }
 
@@ -148,7 +150,7 @@ export async function updateWorkspace(
     updates,
   );
   const parsed = workspaceResponseSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace response.");
   return parsed.data;
 }
 
@@ -162,7 +164,7 @@ export async function getWorkspaceMembers(
     "GET",
   );
   const parsed = z.array(workspaceMemberSchema).safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace member list.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace member list.");
   return parsed.data;
 }
 
@@ -179,7 +181,7 @@ export async function createWorkspaceInvitation(
     { email, role },
   );
   const parsed = workspaceInvitationSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected invitation response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected invitation response.");
   return parsed.data;
 }
 
@@ -195,7 +197,7 @@ export async function respondToWorkspaceInvitation(
     { invitation_token: invitationToken },
   );
   const parsed = invitationDecisionSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected invitation decision response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected invitation decision response.");
   return parsed.data;
 }
 
@@ -215,15 +217,18 @@ export async function syncCurrentProfile(accessToken: string): Promise<CurrentPr
 
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = z.object({ detail: z.string().optional() }).safeParse(result);
-    throw new Error(detail.success && detail.data.detail
-      ? `Your account is ready, but profile setup failed: ${detail.data.detail}`
-      : `Your account is ready, but profile setup failed (HTTP ${response.status}).`);
+    const detail = getErrorDetail(result);
+    throw new ApiError(
+      detail
+        ? `Your account is ready, but profile setup failed: ${detail}`
+        : `Your account is ready, but profile setup failed (HTTP ${response.status}).`,
+      response.status,
+    );
   }
 
   const parsed = profileResponseSchema.safeParse(result);
   if (!parsed.success) {
-    throw new Error("Your account is ready, but FastAPI returned an unexpected profile response.");
+    throw new Error("Your account is ready, but SupportAI returned an unexpected profile response.");
   }
   return parsed.data;
 }
@@ -241,13 +246,13 @@ export async function getCurrentProfile(accessToken: string): Promise<CurrentPro
 
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = z.object({ detail: z.string().optional() }).safeParse(result);
-    throw new Error(detail.success && detail.data.detail
-      ? detail.data.detail
-      : `Profile request failed (HTTP ${response.status}).`);
+    throw new ApiError(
+      getErrorDetail(result) ?? `Profile request failed (HTTP ${response.status}).`,
+      response.status,
+    );
   }
   const parsed = profileResponseSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected profile response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected profile response.");
   return parsed.data;
 }
 
@@ -263,13 +268,13 @@ export async function getAuthenticatedUser(accessToken: string): Promise<Current
   }
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = z.object({ detail: z.string().optional() }).safeParse(result);
-    throw new Error(detail.success && detail.data.detail
-      ? detail.data.detail
-      : `Account request failed (HTTP ${response.status}).`);
+    throw new ApiError(
+      getErrorDetail(result) ?? `Account request failed (HTTP ${response.status}).`,
+      response.status,
+    );
   }
   const parsed = currentUserResponseSchema.safeParse(result);
-  if (!parsed.success) throw new Error("FastAPI returned an unexpected account response.");
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected account response.");
   return parsed.data;
 }
 

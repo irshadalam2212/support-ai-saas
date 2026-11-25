@@ -7,7 +7,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { getFastApiBaseUrl, getFastApiHealth } from "@/lib/fastapi.api";
 
@@ -28,7 +27,7 @@ export default function BackendHealthPage() {
           <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Activity aria-hidden="true" className="size-5" />
           </div>
-          <CardTitle>FastAPI connection check</CardTitle>
+          <h1 className="text-base font-medium">FastAPI connection check</h1>
           <CardDescription>
             This developer page checks the React client’s connection to the new FastAPI service.
           </CardDescription>

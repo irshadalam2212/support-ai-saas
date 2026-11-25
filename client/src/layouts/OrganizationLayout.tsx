@@ -1,76 +1,29 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router";
-import {
-  BookOpen,
-  Bot,
-  ChartNoAxesCombined,
-  CreditCard,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  Settings2,
-  Users,
-} from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/components/auth/AuthContext";
+import AppHeader from "@/components/layout/AppHeader";
+import AppSidebar from "@/components/layout/AppSidebar";
+import { useSidebarPreference } from "@/components/layout/useSidebarPreference";
+import ErrorState from "@/components/shared/ErrorState";
+import LoadingState from "@/components/shared/LoadingState";
+import Notice from "@/components/shared/Notice";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { WorkspaceContext } from "@/components/workspace/WorkspaceContext";
-import { Button } from "@/components/ui/button";
 import { ensureInitialWorkspace, getWorkspaces, type WorkspaceSummary } from "@/lib/fastapi.api";
 import { supabase } from "@/lib/supabase";
 
-type NavItem = {
-  label: string;
-  path: string;
-  icon: typeof LayoutDashboard;
-  status?: string;
-};
-
-const workspaceItems: NavItem[] = [
-  { label: "Overview", path: "/dashboard", icon: LayoutDashboard },
-  { label: "Conversations", path: "/dashboard/conversations", icon: MessageSquare, status: "Planned" },
-  { label: "Customers", path: "/dashboard/customers", icon: Users, status: "Planned" },
-  { label: "Knowledge Base", path: "/dashboard/knowledge-base", icon: BookOpen, status: "Planned" },
-  { label: "AI Assistant", path: "/dashboard/assistant", icon: Bot, status: "Planned" },
-  { label: "Analytics", path: "/dashboard/analytics", icon: ChartNoAxesCombined, status: "Planned" },
-];
-
-const managementItems: NavItem[] = [
-  { label: "Workspace settings", path: "/dashboard/settings", icon: Settings2 },
-  { label: "Team members", path: "/dashboard/settings/team", icon: Users },
-  { label: "Billing", path: "/dashboard/billing", icon: CreditCard, status: "Not connected" },
-];
-
 const EMPTY_WORKSPACES: WorkspaceSummary[] = [];
-
-function NavGroup({ title, items }: { title: string; items: NavItem[] }) {
-  return (
-    <section className="space-y-1">
-      <h2 className="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</h2>
-      {items.map(({ label, path, icon: Icon, status }) => (
-        <NavLink
-          key={path}
-          to={path}
-          end={path === "/dashboard" || path === "/dashboard/settings"}
-          className={({ isActive }) =>
-            `flex min-w-0 items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors ${isActive
-              ? "bg-muted font-medium text-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`
-          }
-        >
-          <Icon aria-hidden="true" className="size-4 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">{label}</span>
-          {status && <span className="shrink-0 text-[10px] text-muted-foreground">{status}</span>}
-        </NavLink>
-      ))}
-    </section>
-  );
-}
 
 export default function OrganizationLayout() {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useSidebarPreference();
+  const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(
     () => localStorage.getItem("supportai.activeWorkspaceId") ?? "",
@@ -96,6 +49,11 @@ export default function OrganizationLayout() {
     }
   }, [activeWorkspace, activeWorkspaceId]);
 
+  // The content area scrolls, not the window, so reset it on navigation.
+  useLayoutEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
+
   const changeActiveWorkspace = useCallback((workspaceId: string) => {
     setActiveWorkspaceId(workspaceId);
     localStorage.setItem("supportai.activeWorkspaceId", workspaceId);
@@ -109,8 +67,10 @@ export default function OrganizationLayout() {
 
   const handleSignOut = async () => {
     setSignOutError("");
+    setSigningOut(true);
     const { error } = await supabase.auth.signOut();
     if (error) {
+      setSigningOut(false);
       setSignOutError("Unable to sign out. Please try again.");
       return;
     }
@@ -118,93 +78,52 @@ export default function OrganizationLayout() {
   };
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-muted/30">
-      <aside className="hidden h-full w-64 shrink-0 flex-col border-r bg-background lg:flex">
-        <div className="flex h-16 shrink-0 items-center border-b px-6">
-          <div>
-            <h1 className="text-lg font-semibold">SupportAI</h1>
-            <p className="text-xs text-muted-foreground">Customer support workspace</p>
-          </div>
-        </div>
+    <WorkspaceContext.Provider value={workspaceContext}>
+      <SidebarProvider
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+        // The collapsed rail is wider on touch screens so its buttons can be 44px.
+        className="h-dvh min-h-0 overflow-hidden pointer-coarse:[--sidebar-width-icon:3.75rem]!"
+      >
+        <a
+          href="#main-content"
+          className="sr-only z-50 rounded-lg bg-primary text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:px-4 focus:py-2"
+        >
+          Skip to content
+        </a>
+        {/* Without a provider, tooltips on the collapsed rail wait 600ms. */}
+        <TooltipProvider>
+          <AppSidebar />
+        </TooltipProvider>
 
-        <nav aria-label="Main navigation" className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-4">
-          <NavGroup title="Workspace" items={workspaceItems} />
-          <NavGroup title="Management" items={managementItems} />
-        </nav>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <AppHeader signingOut={signingOut} onSignOut={() => void handleSignOut()} />
 
-        <div className="shrink-0 border-t px-5 py-3 text-xs text-muted-foreground">
-          {activeWorkspace ? `${activeWorkspace.role.toLowerCase()} · ${activeWorkspace.name}` : "No workspace selected"}
-        </div>
-      </aside>
+          {signOutError && <Notice tone="error" className="rounded-none border-x-0 border-t-0">{signOutError}</Notice>}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
-          <div className="min-w-0">
-            {workspacesQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground" role="status">Loading workspace…</p>
-            ) : workspacesQuery.isError ? (
-              <p className="text-sm text-destructive" role="alert">Could not load workspaces</p>
-            ) : workspaces.length > 1 ? (
-              <select
-                aria-label="Active workspace"
-                className="h-9 max-w-48 rounded-md border bg-background px-3 text-sm font-semibold sm:max-w-64"
-                value={activeWorkspace?.id ?? ""}
-                onChange={(event) => changeActiveWorkspace(event.target.value)}
-              >
-                {workspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
-                ))}
-              </select>
-            ) : (
-              <h2 className="max-w-52 truncate font-semibold sm:max-w-none">{activeWorkspace?.name ?? "Workspace"}</h2>
-            )}
-            <p className="truncate text-xs text-muted-foreground">
-              {activeWorkspace ? `${activeWorkspace.role.toLowerCase()} workspace` : "Workspace"}
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="max-w-52 truncate text-sm font-medium">{session?.user.email}</p>
-              <p className="text-xs text-muted-foreground">Signed in</p>
+          <main
+            ref={mainRef}
+            id="main-content"
+            tabIndex={-1}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/30 p-4 outline-none sm:p-6"
+          >
+            <div className="mx-auto w-full max-w-5xl">
+              {workspacesQuery.isPending ? (
+                <LoadingState label="Loading your workspace" rows={5} />
+              ) : !activeWorkspace && workspacesQuery.isError ? (
+                <ErrorState
+                  title="Couldn't load your workspace"
+                  message={workspacesQuery.error.message}
+                  onRetry={() => void workspacesQuery.refetch()}
+                  retrying={workspacesQuery.isFetching}
+                />
+              ) : (
+                <Outlet />
+              )}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={() => void handleSignOut()}>
-              <LogOut aria-hidden="true" />
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </header>
-
-        <nav aria-label="Mobile navigation" className="flex shrink-0 gap-1 overflow-x-auto border-b bg-background p-2 lg:hidden">
-          {[...workspaceItems, ...managementItems].map(({ label, path }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === "/dashboard" || path === "/dashboard/settings"}
-              className={({ isActive }) =>
-                `shrink-0 rounded-md px-3 py-2 text-xs ${isActive
-                  ? "bg-muted font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-                }`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {signOutError && (
-          <p className="shrink-0 border-b border-destructive/30 bg-destructive/5 px-6 py-2 text-sm text-destructive" role="alert">
-            {signOutError}
-          </p>
-        )}
-
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
-          <WorkspaceContext.Provider value={workspaceContext}>
-            <Outlet />
-          </WorkspaceContext.Provider>
-        </main>
-      </div>
-    </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    </WorkspaceContext.Provider>
   );
 }
