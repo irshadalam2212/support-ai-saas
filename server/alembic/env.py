@@ -15,7 +15,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-database_url = get_settings().database_url
+settings = get_settings()
+# Migrations need the table owner; the API itself should use a restricted login.
+database_url = settings.migration_database_url or settings.database_url
 
 
 def run_migrations_offline() -> None:

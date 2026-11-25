@@ -65,9 +65,43 @@ Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The mi
 - `public.workspace_members`, keyed by `(workspace_id, user_id)` with a constrained role.
 - `public.workspace_invitations`, linked to a workspace and inviter profile, with a hashed token, invited email, role, status, expiry, and creation timestamp. A partial unique index prevents multiple pending invitations for the same workspace/email; ownership cannot be granted through invitations.
 
-Profiles are user-owned. Workspaces are tenant roots, and memberships and invitations are scoped to a workspace. RLS limits authenticated Supabase reads to member workspaces and permitted membership rows. The browser has no grants on invitation rows. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT.
+- `0004_restricted_roles` removes direct browser writes, protects `alembic_version`, and creates the `supportai_app` role for the API.
 
-Review the generated SQL before applying the migration. To preview without changing the database, run `python -m alembic upgrade head --sql`. Once approved, run `python -m alembic upgrade head` from this directory.
+Profiles are user-owned. Workspaces are tenant roots, and memberships and invitations are scoped to a workspace. RLS limits authenticated Supabase reads to the user's own profile, member workspaces, and permitted membership rows. After migration `0004`, the browser cannot write to any application table and has no access to invitation rows; all changes go through FastAPI. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT.
+
+Review the generated SQL before applying a migration. To preview without changing the database, run `python -m alembic upgrade head --sql`. Once approved, run `python -m alembic upgrade head` from this directory.
+
+## Restricted database role
+
+The API should not connect as the database owner. `supportai_app` may only read and write the four application tables, cannot change the schema, cannot read `auth.users`, and cannot delete profiles, workspaces, or invitations. Row Level Security gives it access to all rows because FastAPI performs the membership and role checks; the database does not isolate tenants from this role.
+
+1. Apply the migrations with the owner connection.
+2. In the Supabase SQL editor, create a login that joins the role. Choose a long random password and do not save the statement in the repository:
+
+   ```sql
+   CREATE ROLE supportai_api LOGIN PASSWORD '<your-password>' IN ROLE supportai_app;
+   ```
+
+3. In `server/.env`, move the current owner connection string to `MIGRATION_DATABASE_URL`. Set `DATABASE_URL` to the same string with the new user and password. With the Supabase session pooler the user name is `supportai_api.<project-ref>`.
+4. Verify, then restart the API. The command should report that the role is restricted:
+
+   ```powershell
+   python -m app.db.check_connection
+   ```
+
+To go back, restore the owner connection string in `DATABASE_URL`. New tables added by later migrations must grant `supportai_app` the privileges they need and add a policy for it.
+
+## PostgreSQL tests
+
+Tests in `tests/postgres/` check Row Level Security, role privileges, tenant isolation, and simultaneous changes on a real server. They are skipped unless `TEST_DATABASE_URL` is set, and they refuse a database that already has the application tables or that matches the application's server and user.
+
+Use a disposable database: a local PostgreSQL 15 or newer, or an empty Supabase project kept only for testing (use its session pooler or direct connection and a user that can create roles). The tests apply every migration and revert them afterwards.
+
+```powershell
+$env:TEST_DATABASE_URL = "postgresql://postgres@127.0.0.1:5432/supportai_test?sslmode=disable"
+python -m pytest tests/postgres
+Remove-Item Env:TEST_DATABASE_URL
+```
 
 ## Current boundary
 

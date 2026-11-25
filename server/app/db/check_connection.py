@@ -23,6 +23,35 @@ def safe_error_summary(error: Exception) -> str:
     )
 
 
+ROLE_QUERY = """
+SELECT current_user,
+       r.rolsuper,
+       r.rolbypassrls,
+       EXISTS (
+         SELECT 1 FROM pg_tables AS t
+         WHERE t.schemaname = 'public' AND pg_has_role(current_user, t.tableowner, 'USAGE')
+       ) AS owns_tables
+FROM pg_roles AS r
+WHERE r.rolname = current_user
+"""
+
+
+def describe_role(user: str, superuser: bool, bypasses_rls: bool, owns_tables: bool) -> str:
+    """Say whether the connected role is limited enough to run the API."""
+    reasons = [
+        reason
+        for applies, reason in (
+            (superuser, "is a superuser"),
+            (bypasses_rls, "bypasses Row Level Security"),
+            (owns_tables, "owns tables in the public schema"),
+        )
+        if applies
+    ]
+    if not reasons:
+        return f"Role '{user}' is restricted."
+    return f"Role '{user}' is NOT restricted: it {', '.join(reasons)}. See 'Restricted database role' in README.md."
+
+
 def main() -> None:
     if engine is None:
         raise SystemExit("DATABASE_URL is not configured; set it in server/.env first.")
@@ -30,6 +59,7 @@ def main() -> None:
     try:
         with engine.connect() as connection:
             result = connection.scalar(text("SELECT 1"))
+            role = connection.execute(text(ROLE_QUERY)).one()
     except Exception as error:
         # Redact URL credentials and host before reporting the driver's diagnostic.
         raise SystemExit(
@@ -41,6 +71,7 @@ def main() -> None:
         raise SystemExit("Database responded, but SELECT 1 returned an unexpected result.")
 
     print("PostgreSQL connection successful (SELECT 1 returned 1).")
+    print(describe_role(*role))
 
 
 if __name__ == "__main__":
