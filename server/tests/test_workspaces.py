@@ -37,6 +37,8 @@ class FakeSession:
     def get(self, model, record_id):
         if model is Profile:
             return next((profile for profile in self.profiles if profile.id == record_id), None)
+        if model is Workspace:
+            return next((workspace for workspace in self.workspaces if workspace.id == record_id), None)
         return None
 
     def execute(self, statement):

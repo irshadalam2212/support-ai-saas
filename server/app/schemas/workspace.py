@@ -69,6 +69,13 @@ class InvitationDecisionRequest(BaseModel):
     invitation_token: str = Field(min_length=32, max_length=128)
 
 
+class InvitationPreviewResponse(BaseModel):
+    workspace_name: str
+    email: str
+    role: InvitationRoleName
+    expires_at: datetime
+
+
 class InvitationDecisionResponse(BaseModel):
     invitation_id: UUID
     workspace_id: UUID
