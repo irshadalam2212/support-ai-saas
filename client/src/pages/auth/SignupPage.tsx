@@ -9,10 +9,9 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import PasswordField from "@/components/auth/PasswordField";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import SubmitButton from "@/components/auth/SubmitButton";
+import TermsCheckbox from "@/components/auth/TermsCheckbox";
 import TextField from "@/components/auth/TextField";
 import Notice from "@/components/shared/Notice";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/api";
 import { registerAccount } from "@/lib/auth.api";
 import { signupSchema, type SignupFormValues } from "@/schemas/auth.schema";
@@ -21,15 +20,13 @@ export default function SignupPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  // Set when someone arrives from a page they should go back to, such as an invitation.
+  // Set when someone arrives from a page they should go back to.
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
   const registerMutation = useMutation({
     mutationFn: registerAccount,
     onSuccess: ({ requiresEmailConfirmation }) => {
       if (requiresEmailConfirmation) {
-        const notice = returnTo
-          ? "Check your email to confirm your account, then sign in. If you were invited, open your invitation link again."
-          : "Check your email to confirm your account, then sign in.";
+        const notice = "Check your email to confirm your account, then sign in.";
         navigate("/login", { state: { notice, returnTo } });
         return;
       }
@@ -109,22 +106,7 @@ export default function SignupPage() {
           name="terms"
           control={control}
           render={({ field }) => (
-            <div>
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="terms"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  className="mt-0.5"
-                  aria-invalid={Boolean(errors.terms)}
-                  aria-describedby={errors.terms ? "terms-error" : undefined}
-                />
-                <Label htmlFor="terms" className="cursor-pointer text-sm leading-5 font-normal text-muted-foreground">
-                  I agree to the Terms of Service and Privacy Policy.
-                </Label>
-              </div>
-              {errors.terms && <p id="terms-error" className="mt-2 text-xs text-destructive">{errors.terms.message}</p>}
-            </div>
+            <TermsCheckbox checked={field.value} onCheckedChange={field.onChange} error={errors.terms?.message} />
           )}
         />
 

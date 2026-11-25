@@ -53,6 +53,13 @@ const workspaceInvitationSchema = z.object({
   email_sent: z.boolean(),
 });
 
+const invitationPreviewSchema = z.object({
+  workspace_name: z.string(),
+  email: z.string(),
+  role: z.enum(["ADMIN", "AGENT", "CUSTOMER"]),
+  expires_at: z.string().datetime({ offset: true }),
+});
+
 const invitationDecisionSchema = z.object({
   invitation_id: z.string().uuid(),
   workspace_id: z.string().uuid(),
@@ -67,10 +74,12 @@ export type WorkspaceSummary = z.infer<typeof workspaceResponseSchema>;
 export type WorkspaceMemberSummary = z.infer<typeof workspaceMemberSchema>;
 export type WorkspaceInvitation = z.infer<typeof workspaceInvitationSchema>;
 export type InvitationDecision = z.infer<typeof invitationDecisionSchema>;
+export type InvitationPreview = z.infer<typeof invitationPreviewSchema>;
 
 async function workspaceRequest(
   path: string,
-  accessToken: string,
+  /** Null only for endpoints that are public. */
+  accessToken: string | null,
   method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown,
 ) {
@@ -80,7 +89,7 @@ async function workspaceRequest(
       method,
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`,
+        ...(accessToken === null ? {} : { Authorization: `Bearer ${accessToken}` }),
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -227,6 +236,16 @@ export async function createWorkspaceInvitation(
   );
   const parsed = workspaceInvitationSchema.safeParse(result);
   if (!parsed.success) throw new Error("SupportAI returned an unexpected invitation response.");
+  return parsed.data;
+}
+
+/** Public: the invitation token is the only credential needed. */
+export async function previewWorkspaceInvitation(invitationToken: string): Promise<InvitationPreview> {
+  const result = await workspaceRequest("/invitations/preview", null, "POST", {
+    invitation_token: invitationToken,
+  });
+  const parsed = invitationPreviewSchema.safeParse(result);
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected invitation preview.");
   return parsed.data;
 }
 

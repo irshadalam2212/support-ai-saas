@@ -12,19 +12,21 @@ import TextField from "@/components/auth/TextField";
 import Notice from "@/components/shared/Notice";
 import { getApiErrorMessage } from "@/lib/api";
 import { loginAccount } from "@/lib/auth.api";
+import { isInvitationPath } from "@/lib/invitations";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 
 export default function LoginPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const locationState = location.state as { notice?: string; returnTo?: string } | null;
+  const locationState = location.state as { notice?: string; returnTo?: string; email?: string } | null;
   const notice = locationState?.notice;
   const returnTo = locationState?.returnTo;
+  const answeringInvitation = isInvitationPath(returnTo);
   const loginMutation = useMutation({
-    mutationFn: loginAccount,
-    onSuccess: () => {
-      navigate(returnTo ?? "/overview", { replace: true });
+    mutationFn: (values: LoginFormValues) => loginAccount(values, { answeringInvitation }),
+    onSuccess: (unansweredInvitation) => {
+      navigate(returnTo ?? unansweredInvitation ?? "/overview", { replace: true });
     },
   });
 
@@ -34,7 +36,7 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: locationState?.email ?? "", password: "" },
   });
 
   // Only for people who arrive already signed in. While a sign-in is running,
@@ -76,9 +78,10 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Don't have an account?{" "}
+        {/* Invited people create their account on the invitation page. */}
         <Link
-          to="/signup"
-          state={returnTo ? { returnTo } : undefined}
+          to={answeringInvitation ? returnTo! : "/signup"}
+          state={returnTo && !answeringInvitation ? { returnTo } : undefined}
           className="rounded-sm font-medium text-primary hover:underline"
         >
           Sign up

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { CircleAlert, LoaderCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
 import AuthLayout from "@/components/auth/AuthLayout";
 import { buttonVariants } from "@/components/ui/button";
 import { ensureInitialWorkspace, syncCurrentProfile } from "@/lib/fastapi.api";
+import { invitationPath, pendingInvitationToken } from "@/lib/invitations";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -17,13 +19,15 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     let active = true;
     let syncStarted = false;
-    const syncAndContinue = async (accessToken: string) => {
+    const syncAndContinue = async ({ access_token: accessToken, user }: Session) => {
       if (!active || syncStarted) return;
       syncStarted = true;
       try {
         await syncCurrentProfile(accessToken);
-        await ensureInitialWorkspace(accessToken);
-        if (active) navigate("/overview", { replace: true });
+        // Invited people go back to their invitation instead of getting a workspace of their own.
+        const invitationToken = pendingInvitationToken(user);
+        if (!invitationToken) await ensureInitialWorkspace(accessToken);
+        if (active) navigate(invitationToken ? invitationPath(invitationToken) : "/overview", { replace: true });
       } catch {
         if (!active) return;
         setMessage("Your email is confirmed, but we couldn't finish setting up your workspace. Sign in again to retry.");
@@ -32,7 +36,7 @@ export default function AuthCallbackPage() {
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) void syncAndContinue(session.access_token);
+      if (session) void syncAndContinue(session);
     });
 
     void supabase.auth.getSession().then(({ data, error }) => {
@@ -41,7 +45,7 @@ export default function AuthCallbackPage() {
         setMessage("We could not verify this link. Request a new confirmation email and try again.");
         setFailed(true);
       } else if (data.session) {
-        void syncAndContinue(data.session.access_token);
+        void syncAndContinue(data.session);
       } else {
         setMessage("This link is invalid or expired. Request a new confirmation email and try again.");
         setFailed(true);

@@ -37,6 +37,11 @@ export const signupSchema = z.object({
 
 export type SignupFormValues = z.infer<typeof signupSchema>;
 
+/** The email comes from the invitation, and the person is joining an existing workspace. */
+export const invitedSignupSchema = signupSchema.pick({ fullName: true, password: true, terms: true });
+
+export type InvitedSignupFormValues = z.infer<typeof invitedSignupSchema>;
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
 
