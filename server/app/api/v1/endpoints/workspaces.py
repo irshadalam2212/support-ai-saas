@@ -8,11 +8,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_claims
+from app.api.deps import WorkspaceAccess, get_current_claims, get_workspace_access, require_workspace_role
 from app.db.session import get_db
 from app.models.profile import Profile
 from app.models.workspace import Workspace, WorkspaceMember
-from app.schemas.workspace import WorkspaceResponse
+from app.schemas.workspace import WorkspaceResponse, WorkspaceUpdateRequest
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
@@ -124,3 +124,30 @@ def ensure_initial_workspace(
         status_code=status.HTTP_409_CONFLICT,
         detail="Could not allocate a unique workspace slug; please retry",
     )
+
+
+@router.get(
+    "/{workspace_id}",
+    response_model=WorkspaceResponse,
+    summary="Get a workspace the current user belongs to",
+)
+def get_workspace(access: WorkspaceAccess = Depends(get_workspace_access)) -> WorkspaceResponse:
+    return _to_response(access.workspace, access.membership.role)
+
+
+@router.patch(
+    "/{workspace_id}",
+    response_model=WorkspaceResponse,
+    summary="Update workspace details (owner or admin)",
+)
+def update_workspace(
+    payload: WorkspaceUpdateRequest,
+    access: WorkspaceAccess = Depends(require_workspace_role("OWNER", "ADMIN")),
+    db: Session = Depends(get_db),
+) -> WorkspaceResponse:
+    updates = payload.model_dump(exclude_unset=True)
+    for field, value in updates.items():
+        setattr(access.workspace, field, value)
+    db.commit()
+    db.refresh(access.workspace)
+    return _to_response(access.workspace, access.membership.role)

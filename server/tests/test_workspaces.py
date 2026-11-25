@@ -35,13 +35,19 @@ class FakeSession:
             return self.profile
         return None
 
-    def execute(self, _statement):
+    def execute(self, statement):
         workspaces_by_id = {workspace.id: workspace for workspace in self.workspaces}
-        rows = [
-            (workspaces_by_id[member.workspace_id], member.role)
-            for member in self.members
-            if member.user_id == self.user_id and member.workspace_id in workspaces_by_id
-        ]
+        parameters = statement.compile().params
+        workspace_filter = parameters.get("id_1")
+        rows = []
+        for member in self.members:
+            if member.user_id != self.user_id or member.workspace_id not in workspaces_by_id:
+                continue
+            if workspace_filter is not None and member.workspace_id != workspace_filter:
+                continue
+            workspace = workspaces_by_id[member.workspace_id]
+            second_name = statement.column_descriptions[1]["name"]
+            rows.append((workspace, member) if second_name == "WorkspaceMember" else (workspace, member.role))
         return FakeResult(rows)
 
     def scalar(self, _statement):
@@ -104,3 +110,67 @@ def test_initial_workspace_creation_is_idempotent_and_listed_for_member():
     assert second.json()["id"] == first.json()["id"]
     assert len(session.workspaces) == 1
     assert workspaces.json() == [first.json()]
+
+
+def test_member_can_read_own_workspace_but_cannot_read_another_workspace():
+    user_id = uuid4()
+    other_user_id = uuid4()
+    own_workspace = Workspace(
+        id=uuid4(), name="Own", slug="own", created_by=user_id, created_at=datetime.now(UTC)
+    )
+    other_workspace = Workspace(
+        id=uuid4(), name="Other", slug="other", created_by=other_user_id, created_at=datetime.now(UTC)
+    )
+    session = FakeSession(user_id)
+    session.workspaces.extend([own_workspace, other_workspace])
+    session.members.extend([
+        WorkspaceMember(workspace_id=own_workspace.id, user_id=user_id, role="AGENT"),
+        WorkspaceMember(workspace_id=other_workspace.id, user_id=other_user_id, role="OWNER"),
+    ])
+    app.dependency_overrides[get_current_claims] = lambda: {"sub": str(user_id)}
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def read_workspaces():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            own = await client.get(f"/api/v1/workspaces/{own_workspace.id}")
+            other = await client.get(f"/api/v1/workspaces/{other_workspace.id}")
+            return own, other
+
+    try:
+        own, other = asyncio.run(read_workspaces())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert own.status_code == 200
+    assert own.json()["id"] == str(own_workspace.id)
+    assert own.json()["role"] == "AGENT"
+    assert other.status_code == 404
+
+
+def test_only_owner_or_admin_can_update_workspace():
+    user_id = uuid4()
+    workspace = Workspace(
+        id=uuid4(), name="Acme", slug="acme", created_by=user_id, created_at=datetime.now(UTC)
+    )
+    membership = WorkspaceMember(workspace_id=workspace.id, user_id=user_id, role="AGENT")
+    session = FakeSession(user_id)
+    session.workspaces.append(workspace)
+    session.members.append(membership)
+    app.dependency_overrides[get_current_claims] = lambda: {"sub": str(user_id)}
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def update_workspace():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            denied = await client.patch(f"/api/v1/workspaces/{workspace.id}", json={"name": "Changed"})
+            membership.role = "ADMIN"
+            allowed = await client.patch(f"/api/v1/workspaces/{workspace.id}", json={"name": "Changed"})
+            return denied, allowed
+
+    try:
+        denied, allowed = asyncio.run(update_workspace())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert denied.status_code == 403
+    assert allowed.status_code == 200
+    assert allowed.json()["name"] == "Changed"
