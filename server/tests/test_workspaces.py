@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime
+import hashlib
 from uuid import UUID, uuid4
 
 from httpx import ASGITransport, AsyncClient
@@ -9,7 +10,7 @@ from app.api.v1.endpoints.workspaces import _slug_base
 from app.db.session import get_db
 from app.main import app
 from app.models.profile import Profile
-from app.models.workspace import Workspace, WorkspaceMember
+from app.models.workspace import Workspace, WorkspaceInvitation, WorkspaceMember
 
 
 class FakeResult:
@@ -30,6 +31,7 @@ class FakeSession:
         self.profiles = [self.profile]
         self.workspaces: list[Workspace] = []
         self.members: list[WorkspaceMember] = []
+        self.invitations: list[WorkspaceInvitation] = []
 
     def get(self, model, record_id):
         if model is Profile:
@@ -47,6 +49,20 @@ class FakeSession:
                 profile = next((item for item in self.profiles if item.id == member.user_id), None)
                 if profile is not None:
                     rows.append((member, profile))
+            return FakeResult(rows)
+
+        if entities == [WorkspaceInvitation]:
+            parameters = statement.compile().params
+            workspace_filter = parameters.get("workspace_id_1")
+            email_filter = parameters.get("email_1")
+            status_filter = parameters.get("status_1")
+            rows = [
+                (invitation,)
+                for invitation in self.invitations
+                if invitation.workspace_id == workspace_filter
+                and invitation.email == email_filter
+                and invitation.status == status_filter
+            ]
             return FakeResult(rows)
 
         workspaces_by_id = {workspace.id: workspace for workspace in self.workspaces}
@@ -72,6 +88,8 @@ class FakeSession:
             self.workspaces.append(record)
         elif isinstance(record, WorkspaceMember):
             self.members.append(record)
+        elif isinstance(record, WorkspaceInvitation):
+            self.invitations.append(record)
 
     def commit(self):
         now = datetime.now(UTC)
@@ -82,6 +100,9 @@ class FakeSession:
         for member in self.members:
             if member.created_at is None:
                 member.created_at = now
+        for invitation in self.invitations:
+            if invitation.created_at is None:
+                invitation.created_at = now
 
     def rollback(self):
         return None
@@ -272,3 +293,77 @@ def test_only_workspace_owner_or_admin_can_list_members():
         },
     ]
     assert agent_response.status_code == 403
+
+
+def test_owner_can_invite_member_and_token_is_stored_as_hash():
+    owner_id = uuid4()
+    workspace = Workspace(
+        id=uuid4(), name="Acme", slug="acme", created_by=owner_id, created_at=datetime.now(UTC)
+    )
+    session = FakeSession(owner_id)
+    session.workspaces.append(workspace)
+    session.members.append(WorkspaceMember(workspace_id=workspace.id, user_id=owner_id, role="OWNER"))
+    app.dependency_overrides[get_current_claims] = lambda: {"sub": str(owner_id)}
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def invite():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            created = await client.post(
+                f"/api/v1/workspaces/{workspace.id}/members/invitations",
+                json={"email": " New.Agent@Acme.Test ", "role": "AGENT"},
+            )
+            duplicate = await client.post(
+                f"/api/v1/workspaces/{workspace.id}/members/invitations",
+                json={"email": "new.agent@acme.test", "role": "ADMIN"},
+            )
+            invalid_role = await client.post(
+                f"/api/v1/workspaces/{workspace.id}/members/invitations",
+                json={"email": "another@acme.test", "role": "OWNER"},
+            )
+            return created, duplicate, invalid_role
+
+    try:
+        created, duplicate, invalid_role = asyncio.run(invite())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert created.status_code == 201
+    body = created.json()
+    assert body["email"] == "new.agent@acme.test"
+    assert body["status"] == "PENDING"
+    assert body["role"] == "AGENT"
+    assert datetime.fromisoformat(body["expires_at"].replace("Z", "+00:00")) > datetime.now(UTC)
+    assert len(body["invitation_token"]) >= 32
+    assert session.invitations[0].token_hash == hashlib.sha256(
+        body["invitation_token"].encode("utf-8")
+    ).hexdigest()
+    assert session.invitations[0].token_hash != body["invitation_token"]
+    assert duplicate.status_code == 409
+    assert invalid_role.status_code == 422
+
+
+def test_agent_cannot_create_workspace_invitation():
+    user_id = uuid4()
+    workspace = Workspace(
+        id=uuid4(), name="Acme", slug="acme", created_by=user_id, created_at=datetime.now(UTC)
+    )
+    session = FakeSession(user_id)
+    session.workspaces.append(workspace)
+    session.members.append(WorkspaceMember(workspace_id=workspace.id, user_id=user_id, role="AGENT"))
+    app.dependency_overrides[get_current_claims] = lambda: {"sub": str(user_id)}
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def invite():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                f"/api/v1/workspaces/{workspace.id}/members/invitations",
+                json={"email": "new.agent@acme.test", "role": "AGENT"},
+            )
+
+    try:
+        response = asyncio.run(invite())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+    assert session.invitations == []

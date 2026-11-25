@@ -1,10 +1,13 @@
 from datetime import datetime
+import re
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 WorkspaceRoleName = Literal["OWNER", "ADMIN", "AGENT", "CUSTOMER"]
+InvitationRoleName = Literal["ADMIN", "AGENT", "CUSTOMER"]
+InvitationStatus = Literal["PENDING", "ACCEPTED", "DECLINED", "REVOKED", "EXPIRED"]
 
 
 class WorkspaceResponse(BaseModel):
@@ -24,6 +27,32 @@ class WorkspaceMemberResponse(BaseModel):
     full_name: str | None
     role: WorkspaceRoleName
     joined_at: datetime
+
+
+class WorkspaceInvitationCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: str = Field(min_length=3, max_length=320)
+    role: InvitationRoleName
+
+    @field_validator("email")
+    @classmethod
+    def normalize_and_validate_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
+            raise ValueError("Enter a valid email address")
+        return value
+
+
+class WorkspaceInvitationResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    email: str
+    role: InvitationRoleName
+    status: InvitationStatus
+    expires_at: datetime
+    created_at: datetime
+    invitation_token: str
 
 
 class WorkspaceUpdateRequest(BaseModel):

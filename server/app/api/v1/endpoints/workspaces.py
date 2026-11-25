@@ -1,5 +1,8 @@
 import re
+import hashlib
+import secrets
 import unicodedata
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -11,9 +14,11 @@ from sqlalchemy.orm import Session
 from app.api.deps import WorkspaceAccess, get_current_claims, get_workspace_access, require_workspace_role
 from app.db.session import get_db
 from app.models.profile import Profile
-from app.models.workspace import Workspace, WorkspaceMember
+from app.models.workspace import Workspace, WorkspaceInvitation, WorkspaceMember
 from app.schemas.workspace import (
     WorkspaceCreateRequest,
+    WorkspaceInvitationCreateRequest,
+    WorkspaceInvitationResponse,
     WorkspaceMemberResponse,
     WorkspaceResponse,
     WorkspaceUpdateRequest,
@@ -231,3 +236,65 @@ def list_workspace_members(
         )
         for member, profile in rows
     ]
+
+
+@router.post(
+    "/{workspace_id}/members/invitations",
+    response_model=WorkspaceInvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Invite a member to a workspace (owner or admin)",
+)
+def create_workspace_invitation(
+    payload: WorkspaceInvitationCreateRequest,
+    access: WorkspaceAccess = Depends(require_workspace_role("OWNER", "ADMIN")),
+    db: Session = Depends(get_db),
+) -> WorkspaceInvitationResponse:
+    now = datetime.now(UTC)
+    existing_row = db.execute(
+        select(WorkspaceInvitation).where(
+            WorkspaceInvitation.workspace_id == access.workspace.id,
+            WorkspaceInvitation.email == payload.email,
+            WorkspaceInvitation.status == "PENDING",
+        )
+    ).first()
+    if existing_row is not None:
+        existing = existing_row[0]
+        if existing.expires_at > now:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A pending invitation already exists for this email",
+            )
+        existing.status = "EXPIRED"
+
+    raw_token = secrets.token_urlsafe(32)
+    invitation = WorkspaceInvitation(
+        id=uuid4(),
+        workspace_id=access.workspace.id,
+        email=payload.email,
+        role=payload.role,
+        token_hash=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+        status="PENDING",
+        invited_by=access.membership.user_id,
+        expires_at=now + timedelta(days=7),
+    )
+    db.add(invitation)
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A pending invitation already exists for this email",
+        ) from error
+    db.refresh(invitation)
+
+    return WorkspaceInvitationResponse(
+        id=invitation.id,
+        workspace_id=invitation.workspace_id,
+        email=invitation.email,
+        role=invitation.role,
+        status=invitation.status,
+        expires_at=invitation.expires_at,
+        created_at=invitation.created_at,
+        invitation_token=raw_token,
+    )

@@ -10,6 +10,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -71,6 +72,52 @@ class WorkspaceMember(Base):
         primary_key=True,
     )
     role: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class WorkspaceInvitation(Base):
+    """A pending or completed invitation to join one workspace."""
+
+    __tablename__ = "workspace_invitations"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('ADMIN', 'AGENT', 'CUSTOMER')",
+            name="ck_workspace_invitations_role",
+        ),
+        CheckConstraint(
+            "status IN ('PENDING', 'ACCEPTED', 'DECLINED', 'REVOKED', 'EXPIRED')",
+            name="ck_workspace_invitations_status",
+        ),
+        Index("ix_workspace_invitations_workspace_id", "workspace_id"),
+        Index("ix_workspace_invitations_email", "email"),
+        Index(
+            "uq_workspace_invitations_pending_email",
+            "workspace_id",
+            "email",
+            unique=True,
+            postgresql_where=text("status = 'PENDING'"),
+        ),
+        {"schema": "public"},
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("public.workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="PENDING")
+    invited_by: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("public.profiles.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
