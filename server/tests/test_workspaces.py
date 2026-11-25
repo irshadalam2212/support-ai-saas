@@ -51,7 +51,8 @@ class FakeSession:
         return FakeResult(rows)
 
     def scalar(self, _statement):
-        return None
+        slug = _statement.compile().params.get("slug_1")
+        return next((workspace.id for workspace in self.workspaces if workspace.slug == slug), None)
 
     def add(self, record):
         if isinstance(record, Workspace):
@@ -174,3 +175,34 @@ def test_only_owner_or_admin_can_update_workspace():
     assert denied.status_code == 403
     assert allowed.status_code == 200
     assert allowed.json()["name"] == "Changed"
+
+
+def test_user_can_create_additional_workspace_and_becomes_owner():
+    user_id = uuid4()
+    session = FakeSession(user_id)
+    app.dependency_overrides[get_current_claims] = lambda: {"sub": str(user_id)}
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def create_workspaces():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.post(
+                "/api/v1/workspaces",
+                json={"name": "Acme Support", "description": "Customer help desk"},
+            )
+            second = await client.post("/api/v1/workspaces", json={"name": "Acme Support"})
+            return first, second
+
+    try:
+        first, second = asyncio.run(create_workspaces())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert first.status_code == 201
+    assert first.json()["name"] == "Acme Support"
+    assert first.json()["slug"] == "acme-support"
+    assert first.json()["description"] == "Customer help desk"
+    assert first.json()["role"] == "OWNER"
+    assert second.status_code == 201
+    assert second.json()["slug"] == "acme-support-2"
+    assert len(session.workspaces) == 2
+    assert all(member.role == "OWNER" for member in session.members)

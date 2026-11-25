@@ -12,7 +12,7 @@ from app.api.deps import WorkspaceAccess, get_current_claims, get_workspace_acce
 from app.db.session import get_db
 from app.models.profile import Profile
 from app.models.workspace import Workspace, WorkspaceMember
-from app.schemas.workspace import WorkspaceResponse, WorkspaceUpdateRequest
+from app.schemas.workspace import WorkspaceCreateRequest, WorkspaceResponse, WorkspaceUpdateRequest
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
@@ -115,6 +115,54 @@ def ensure_initial_workspace(
             existing = _first_membership(db, user_id)
             if existing:
                 return _to_response(existing[0], existing[1])
+            continue
+
+        db.refresh(workspace)
+        return _to_response(workspace, "OWNER")
+
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Could not allocate a unique workspace slug; please retry",
+    )
+
+
+@router.post(
+    "",
+    response_model=WorkspaceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a workspace owned by the current user",
+)
+def create_workspace(
+    payload: WorkspaceCreateRequest,
+    claims: dict[str, Any] = Depends(get_current_claims),
+    db: Session = Depends(get_db),
+) -> WorkspaceResponse:
+    user_id = UUID(claims["sub"])
+    if db.get(Profile, user_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Synchronize the authenticated profile before creating a workspace",
+        )
+
+    base = _slug_base(payload.name)
+    for suffix in range(1, 11):
+        candidate = base if suffix == 1 else f"{base[:70 - len(str(suffix)) - 1]}-{suffix}"
+        if db.scalar(select(Workspace.id).where(Workspace.slug == candidate)):
+            continue
+
+        workspace = Workspace(
+            id=uuid4(),
+            name=payload.name,
+            slug=candidate,
+            description=payload.description,
+            created_by=user_id,
+        )
+        db.add(workspace)
+        db.add(WorkspaceMember(workspace_id=workspace.id, user_id=user_id, role="OWNER"))
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
             continue
 
         db.refresh(workspace)

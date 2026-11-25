@@ -44,7 +44,7 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Check `GET http://127.0.0.1:8000/api/v1/health`. Interactive OpenAPI docs are at `http://127.0.0.1:8000/docs`.
 
-The protected `GET /api/v1/auth/me` endpoint requires `Authorization: Bearer <access-token>` and returns the verified user's ID and email. `POST /api/v1/profiles/me` idempotently creates or syncs the user's profile from verified token claims; `GET /api/v1/profiles/me` reads that profile. `POST /api/v1/workspaces/onboarding` creates or returns the user's initial workspace, and `GET /api/v1/workspaces` lists only workspaces where that verified user has a membership. Profile and workspace identities come from verified claims/database results, never request-supplied identity fields. A missing or invalid token returns `401`; unavailable Supabase key discovery/Auth validation returns `503`.
+The protected `GET /api/v1/auth/me` endpoint requires `Authorization: Bearer <access-token>` and returns the verified user's ID and email. `POST /api/v1/profiles/me` idempotently creates or syncs the user's profile from verified token claims; `GET /api/v1/profiles/me` reads that profile. `POST /api/v1/workspaces/onboarding` creates or returns the user's initial workspace. `POST /api/v1/workspaces` creates an additional workspace owned by the authenticated user. `GET /api/v1/workspaces` lists only workspaces where that verified user has a membership. `GET` and `PATCH /api/v1/workspaces/{workspace_id}` read or update a workspace after checking membership; only owners and admins may update it. Profile and workspace identities come from verified claims/database results, never request-supplied identity fields. A missing or invalid token returns `401`; unavailable Supabase key discovery/Auth validation returns `503`.
 
 ## Database migrations
 
@@ -54,10 +54,10 @@ Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The mi
 - `public.workspaces`, whose creator references a profile and whose slug is globally unique.
 - `public.workspace_members`, keyed by `(workspace_id, user_id)` with a constrained role.
 
-Profiles are user-owned. Workspaces are tenant roots, and memberships are scoped to a workspace. RLS limits authenticated Supabase reads to member workspaces and permitted membership rows. The browser has no write grants on workspace tables. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT. Invitations, general workspace creation, and role-protected workspace writes remain pending.
+Profiles are user-owned. Workspaces are tenant roots, and memberships are scoped to a workspace. RLS limits authenticated Supabase reads to member workspaces and permitted membership rows. The browser has no write grants on workspace tables. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT. Invitations remain pending.
 
 Review the generated SQL before applying the migration. To preview without changing the database, run `python -m alembic upgrade head --sql`. Once approved, run `python -m alembic upgrade head` from this directory.
 
 ## Current boundary
 
-Supabase handles browser sign-in, signup, password recovery, refresh, and logout. FastAPI verifies bearer tokens, synchronizes profiles, and creates/lists initial workspaces. The dashboard can switch among the current user's workspaces. Invitations and role-protected workspace writes remain pending. The unrelated legacy API helper remains available during the incremental migration.
+Supabase handles browser sign-in, signup, password recovery, refresh, and logout. FastAPI verifies bearer tokens, synchronizes profiles, and manages workspace creation, listing, detail, and owner/admin updates. The dashboard can switch among the current user's workspaces. Invitations remain pending. The unrelated legacy API helper remains available during the incremental migration.
