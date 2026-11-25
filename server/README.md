@@ -1,6 +1,6 @@
 # SupportAI FastAPI service
 
-This is the Python API foundation. The previous Express/Prisma application is preserved in `../server-node-legacy` during the migration. The React client uses Supabase Auth directly; FastAPI verifies Supabase access tokens on protected routes.
+This is the FastAPI backend. The React client uses Supabase Auth directly; FastAPI verifies Supabase access tokens on protected routes.
 
 ## Setup
 
@@ -61,4 +61,4 @@ Review the generated SQL before applying the migration. To preview without chang
 
 ## Current boundary
 
-Supabase handles browser sign-in, signup, password recovery, refresh, and logout. FastAPI verifies bearer tokens, synchronizes profiles, and manages workspace creation, listing, detail, member listing, owner/admin updates, invitation creation, and invitation acceptance/decline. The dashboard can switch among the current user's workspaces. Settings displays the authenticated account and profile, reads workspace details, and supports workspace create/update. The Team Members page lists members and creates invitations; the public invitation page routes recipients through sign-in before responding. SMTP email delivery is optional until SMTP settings are configured. The unrelated legacy API helper remains available during the incremental migration.
+Supabase handles browser sign-in, signup, password recovery, refresh, and logout. FastAPI verifies bearer tokens, synchronizes profiles, and manages workspace creation, listing, detail, member listing, owner/admin updates, invitation creation, and invitation acceptance/decline. The dashboard can switch among the current user's workspaces. Settings displays the authenticated account and profile, reads workspace details, and supports workspace create/update. The Team Members page lists members and creates invitations; the public invitation page routes recipients through sign-in before responding. SMTP email delivery is optional until SMTP settings are configured.

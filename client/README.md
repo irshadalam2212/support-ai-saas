@@ -9,9 +9,9 @@ In Supabase Dashboard → Authentication → URL Configuration, set the local Si
 - `http://localhost:5173/auth/callback` for email confirmation.
 - `http://localhost:5173/reset-password` for password recovery.
 
-`src/lib/supabase.ts` exports the single browser client. Its Auth client persists the browser session, refreshes tokens, and detects auth redirects. The login and signup screens will be switched to this client in the next auth task.
+`src/lib/supabase.ts` exports the single browser client. Its Auth client persists the browser session, refreshes tokens, and detects auth redirects. Signup, login, password recovery, and reset use Supabase Auth. The auth callback synchronizes the profile and creates or loads the initial workspace through FastAPI.
 
-Run the app with `npm run dev`. The separate `VITE_FASTAPI_BASE_URL` configures the FastAPI API; `VITE_API_BASE_URL` still targets the legacy Express auth API during migration.
+Run the app with `npm run dev`. `VITE_FASTAPI_BASE_URL` configures FastAPI.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

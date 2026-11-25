@@ -1,25 +1,18 @@
 # SupportAI SaaS
 
-SupportAI is migrating from the initial React/Express prototype to the architecture described in the master prompt at the workspace root: React, TypeScript, and Vite; FastAPI and Python; Supabase Auth and PostgreSQL; and later pgvector, Gemini, LangChain, LangGraph, Redis, and Celery.
+SupportAI is built with React, TypeScript, and Vite; FastAPI and Python; and Supabase Auth and PostgreSQL. pgvector, Gemini, LangChain, LangGraph, Redis, and Celery are planned for later phases.
 
-## Repository layout during migration
+## Repository layout
 
-- `client/` — existing React frontend.
-- `server/` — new FastAPI backend foundation.
-- `server-node-legacy/` — preserved Express/Prisma implementation for legacy business APIs during migration. Browser authentication uses Supabase Auth.
+- `client/` — React frontend.
+- `server/` — FastAPI backend.
 
-## Run the FastAPI foundation
+## Run the project
 
-See [`server/README.md`](server/README.md). In short, create a Python virtual environment, install `.[dev]`, and run Uvicorn from `server/` on port 8000. The initial health endpoint is `GET /api/v1/health`.
+Follow the setup instructions in [server/README.md](server/README.md) to configure and run FastAPI. Start the frontend from `client/` with `npm run dev`. The backend health endpoint is `GET /api/v1/health`; the frontend connection check is at `http://localhost:5173/dev/health`.
 
-## Check the React-to-FastAPI connection
+Set `VITE_FASTAPI_BASE_URL` in `client/.env.local` if FastAPI runs at a different address. Set the Supabase browser URL and publishable key there as described in `client/README.md`.
 
-Start FastAPI, then start the Vite client from `client/` with `npm run dev`. Open [`http://localhost:5173/dev/health`](http://localhost:5173/dev/health) to check the API. To use a different FastAPI URL, copy `client/.env.example` to `client/.env.local` and update `VITE_FASTAPI_BASE_URL`.
+## Current implementation
 
-## Existing frontend and legacy backend
-
-The React app is in `client/`; its current Vite development server uses port 5173. The preserved Express service and its MySQL configuration are in `server-node-legacy/`. FastAPI verifies Supabase access tokens at `GET /api/v1/auth/me`; other business endpoints will migrate incrementally.
-
-## Migration status
-
-The FastAPI configuration, SQLAlchemy connection setup, Alembic environment, CORS configuration, health endpoint, Supabase bearer-token verification, profile synchronization, workspace/membership/invitation schema, workspace onboarding/list/create/detail/update/member-list endpoints, invitation creation and response, invitation email delivery, and dashboard workspace selector are implemented. The frontend includes workspace create/edit settings, member listing and invitation creation, and invitation response screens. Workspace access is checked against verified membership, and only owners/admins may update workspace details or invite members. Customers, tickets, and other business endpoints remain to be implemented. Keep migration steps incremental and preserve existing data and the legacy service until replacements are verified.
+Supabase Auth, profile synchronization, workspace creation and switching, workspace settings, member listing, and invitation create/respond flows are implemented. The frontend is connected to these endpoints. Customer and ticket workflows, knowledge ingestion, RAG, AI agents, analytics, and billing integrations remain future work. Areas without backend support are labeled in the UI rather than showing sample records as live data.
