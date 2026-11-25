@@ -1,9 +1,10 @@
+import FeatureStatusPage from "@/components/shared/FeatureStatusPage";
+
 export default function AdminDashboardPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold">
-        Super Admin Dashboard
-      </h1>
-    </div>
+    <FeatureStatusPage
+      title="Platform administration"
+      description="This project currently supports workspace roles, not a separate platform administrator role or console."
+    />
   );
 }

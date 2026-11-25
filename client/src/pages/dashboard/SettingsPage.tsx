@@ -99,17 +99,17 @@ export default function SettingsPage() {
           <Link to="/dashboard/settings" className="flex w-full rounded-md bg-muted px-3 py-2.5 text-sm font-medium">
             General
           </Link>
-          <Link to="/dashboard/settings/assistant" className="flex w-full rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
-            AI &amp; Assistant
+          <Link to="/dashboard/settings/assistant" className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
+            <span className="flex-1">AI &amp; Assistant</span><span className="text-[10px]">Planned</span>
           </Link>
           <Link to="/dashboard/settings/team" className="flex w-full rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
             Team Members
           </Link>
-          <Link to="/dashboard/settings/integrations" className="flex w-full rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
-            Integrations
+          <Link to="/dashboard/settings/integrations" className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
+            <span className="flex-1">Integrations</span><span className="text-[10px]">Planned</span>
           </Link>
-          <Link to="/dashboard/settings/security" className="flex w-full rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
-            Security
+          <Link to="/dashboard/settings/security" className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted">
+            <span className="flex-1">Security</span><span className="text-[10px]">Planned</span>
           </Link>
         </Card>
 
