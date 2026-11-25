@@ -29,6 +29,13 @@ class WorkspaceMemberResponse(BaseModel):
     joined_at: datetime
 
 
+class WorkspaceMemberRoleUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Ownership cannot be assigned here, so the same roles as invitations apply.
+    role: InvitationRoleName
+
+
 class WorkspaceInvitationCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

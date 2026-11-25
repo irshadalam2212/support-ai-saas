@@ -46,6 +46,16 @@ Check `GET http://127.0.0.1:8000/api/v1/health`. Interactive OpenAPI docs are at
 
 The protected `GET /api/v1/auth/me` endpoint requires `Authorization: Bearer <access-token>` and returns the verified user's ID and email. `POST /api/v1/profiles/me` idempotently creates or syncs the user's profile from verified token claims; `GET /api/v1/profiles/me` reads that profile. `POST /api/v1/workspaces/onboarding` creates or returns the user's initial workspace. `POST /api/v1/workspaces` creates an additional workspace owned by the authenticated user. `GET /api/v1/workspaces` lists only workspaces where that verified user has a membership. `GET` and `PATCH /api/v1/workspaces/{workspace_id}` read or update a workspace after checking membership; only owners and admins may update it. `GET /api/v1/workspaces/{workspace_id}/members` lists member profile details for workspace owners and admins. `POST /api/v1/workspaces/{workspace_id}/members/invitations` creates a seven-day invitation and sends an email when SMTP is configured; otherwise the team page offers a copyable invite link. Only an SHA-256 hash of the token is stored. An authenticated account with a verified matching email can accept or decline the token through `POST /api/v1/invitations/accept` and `POST /api/v1/invitations/decline`. Configure `FRONTEND_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SECURE`, `SMTP_STARTTLS`, and `EMAIL_FROM` in the server environment for email delivery. Profile and workspace identities come from verified claims/database results, never request-supplied identity fields. A missing or invalid token returns `401`; unavailable Supabase key discovery/Auth validation returns `503`.
 
+## Member management
+
+| Endpoint | Who | Rules |
+|---|---|---|
+| `PATCH /api/v1/workspaces/{workspace_id}/members/{user_id}` with `{"role": ...}` | Owner, admin | Role is `ADMIN`, `AGENT`, or `CUSTOMER` |
+| `DELETE /api/v1/workspaces/{workspace_id}/members/{user_id}` | Owner, admin | Returns `204` |
+| `POST /api/v1/workspaces/{workspace_id}/members/{user_id}/transfer-ownership` | Owner | The target must be an admin; the caller becomes an admin |
+
+An owner can manage admins, agents, and customers; an admin can manage agents and customers only. The owner cannot be changed or removed, so ownership moves only through the transfer endpoint, which locks both membership rows and always leaves exactly one owner. Removing a member revokes pending invitations sent by or to them, and demoting an admin revokes the invitations they sent.
+
 ## Database migrations
 
 Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The migrations create:
@@ -55,10 +65,10 @@ Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The mi
 - `public.workspace_members`, keyed by `(workspace_id, user_id)` with a constrained role.
 - `public.workspace_invitations`, linked to a workspace and inviter profile, with a hashed token, invited email, role, status, expiry, and creation timestamp. A partial unique index prevents multiple pending invitations for the same workspace/email; ownership cannot be granted through invitations.
 
-Profiles are user-owned. Workspaces are tenant roots, and memberships and invitations are scoped to a workspace. RLS limits authenticated Supabase reads to member workspaces and permitted membership rows. The browser has no grants on invitation rows. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT. Email delivery remains pending.
+Profiles are user-owned. Workspaces are tenant roots, and memberships and invitations are scoped to a workspace. RLS limits authenticated Supabase reads to member workspaces and permitted membership rows. The browser has no grants on invitation rows. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT.
 
 Review the generated SQL before applying the migration. To preview without changing the database, run `python -m alembic upgrade head --sql`. Once approved, run `python -m alembic upgrade head` from this directory.
 
 ## Current boundary
 
-Supabase handles browser sign-in, signup, password recovery, refresh, and logout. FastAPI verifies bearer tokens, synchronizes profiles, and manages workspace creation, listing, detail, member listing, owner/admin updates, invitation creation, and invitation acceptance/decline. The dashboard can switch among the current user's workspaces. Settings displays the authenticated account and profile, reads workspace details, and supports workspace create/update. The Team Members page lists members and creates invitations; the public invitation page routes recipients through sign-in before responding. SMTP email delivery is optional until SMTP settings are configured.
+Supabase handles browser sign-in, signup, password recovery, refresh, and logout. FastAPI verifies bearer tokens, synchronizes profiles, and manages workspace creation, listing, detail, member listing, role changes, member removal, ownership transfer, owner/admin updates, invitation creation, and invitation acceptance/decline. The dashboard can switch among the current user's workspaces. Settings displays the authenticated account and profile, reads workspace details, and supports workspace create/update. The Team Members page lists and manages members and creates invitations; the public invitation page routes recipients through sign-in before responding. SMTP email delivery is optional until SMTP settings are configured.

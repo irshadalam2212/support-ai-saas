@@ -104,6 +104,10 @@ class FakeSession:
         elif isinstance(record, WorkspaceInvitation):
             self.invitations.append(record)
 
+    def delete(self, record):
+        if isinstance(record, WorkspaceMember):
+            self.members.remove(record)
+
     def commit(self):
         now = datetime.now(UTC)
         for workspace in self.workspaces:

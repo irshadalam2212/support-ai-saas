@@ -46,6 +46,8 @@ def _load_invitation(
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation has expired")
     if invitation.status == "EXPIRED":
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation has expired")
+    if invitation.status == "REVOKED":
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation has been revoked")
     if invitation.status != "PENDING":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
