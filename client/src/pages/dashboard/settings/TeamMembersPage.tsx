@@ -1,313 +1,234 @@
-import {
-    Mail,
-    MoreHorizontal,
-    Plus,
-    Shield,
-    UserPlus,
-    Users,
-} from "lucide-react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Mail, Plus, Shield, Users } from "lucide-react";
 
+import { useAuth } from "@/components/auth/AuthContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import {
+  createWorkspaceInvitation,
+  getWorkspaceMembers,
+  type WorkspaceInvitation,
+} from "@/lib/fastapi.api";
 
-const members = [
-    {
-        name: "John Smith",
-        email: "john@acme.com",
-        role: "Owner",
-        status: "Active",
-        joined: "Jan 12, 2026",
-        initials: "JS",
-    },
-    {
-        name: "Sarah Johnson",
-        email: "sarah@acme.com",
-        role: "Admin",
-        status: "Active",
-        joined: "Feb 04, 2026",
-        initials: "SJ",
-    },
-    {
-        name: "Michael Brown",
-        email: "michael@acme.com",
-        role: "Agent",
-        status: "Active",
-        joined: "Mar 18, 2026",
-        initials: "MB",
-    },
-    {
-        name: "Emily Davis",
-        email: "emily@acme.com",
-        role: "Agent",
-        status: "Active",
-        joined: "Apr 02, 2026",
-        initials: "ED",
-    },
-    {
-        name: "James Wilson",
-        email: "james@acme.com",
-        role: "Viewer",
-        status: "Pending",
-        joined: "Aug 20, 2026",
-        initials: "JW",
-    },
-];
+type InviteRole = "ADMIN" | "AGENT" | "CUSTOMER";
 
 export default function TeamMembersPage() {
+  const { session } = useAuth();
+  const { activeWorkspace } = useWorkspace();
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<InviteRole>("AGENT");
+  const [createdInvitation, setCreatedInvitation] = useState<WorkspaceInvitation | null>(null);
+  const [copyMessage, setCopyMessage] = useState("");
+  const canManage = activeWorkspace?.role === "OWNER" || activeWorkspace?.role === "ADMIN";
+
+  const membersQuery = useQuery({
+    queryKey: ["workspace-members", activeWorkspace?.id],
+    queryFn: () => getWorkspaceMembers(session!.access_token, activeWorkspace!.id),
+    enabled: Boolean(session?.access_token && activeWorkspace?.id && canManage),
+  });
+  const members = membersQuery.data ?? [];
+
+  const invitationMutation = useMutation({
+    mutationFn: () => createWorkspaceInvitation(
+      session!.access_token,
+      activeWorkspace!.id,
+      email,
+      role,
+    ),
+    onSuccess: async (invitation) => {
+      setCreatedInvitation(invitation);
+      setCopyMessage("");
+      setEmail("");
+      await queryClient.invalidateQueries({ queryKey: ["workspace-members", activeWorkspace?.id] });
+    },
+  });
+
+  async function copyInvitationLink() {
+    try {
+      await navigator.clipboard.writeText(createdInvitation!.invitation_url);
+      setCopyMessage("Invitation link copied.");
+    } catch {
+      setCopyMessage("Copy failed. Select and copy the link above.");
+    }
+  }
+
+  if (!activeWorkspace) {
+    return <p className="text-sm text-muted-foreground">Select a workspace to manage its members.</p>;
+  }
+
+  if (!canManage) {
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <Users className="size-5 text-primary" />
-
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Team Members
-                        </h1>
-                    </div>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Manage your organization's users and access permissions.
-                    </p>
-                </div>
-
-                <Button>
-                    <UserPlus className="mr-2 size-4" />
-                    Invite Member
-                </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid gap-4 sm:grid-cols-3">
-                <Card className="p-5">
-                    <p className="text-sm text-muted-foreground">
-                        Total Members
-                    </p>
-
-                    <p className="mt-2 text-2xl font-semibold">
-                        24
-                    </p>
-
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        Across your organization
-                    </p>
-                </Card>
-
-                <Card className="p-5">
-                    <p className="text-sm text-muted-foreground">
-                        Active Members
-                    </p>
-
-                    <p className="mt-2 text-2xl font-semibold">
-                        21
-                    </p>
-
-                    <p className="mt-1 text-xs text-emerald-600">
-                        87.5% of team
-                    </p>
-                </Card>
-
-                <Card className="p-5">
-                    <p className="text-sm text-muted-foreground">
-                        Pending Invitations
-                    </p>
-
-                    <p className="mt-2 text-2xl font-semibold">
-                        3
-                    </p>
-
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        Awaiting acceptance
-                    </p>
-                </Card>
-            </div>
-
-            {/* Invite Card */}
-            <Card className="p-6">
-                <div className="flex items-start gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Mail className="size-5" />
-                    </div>
-
-                    <div>
-                        <h2 className="font-semibold">
-                            Invite a Team Member
-                        </h2>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Send an invitation to join your organization.
-                        </p>
-                    </div>
-                </div>
-
-                <Separator className="my-6" />
-
-                <div className="grid gap-4 md:grid-cols-[1fr_180px_auto]">
-                    <div className="space-y-2">
-                        <Label htmlFor="invite-email">
-                            Email Address
-                        </Label>
-
-                        <Input
-                            id="invite-email"
-                            type="email"
-                            placeholder="colleague@company.com"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>
-                            Role
-                        </Label>
-
-                        <select
-                            defaultValue="AGENT"
-                            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        >
-                            <option value="ADMIN">
-                                Admin
-                            </option>
-
-                            <option value="AGENT">
-                                Agent
-                            </option>
-
-                            <option value="VIEWER">
-                                Viewer
-                            </option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-end">
-                        <Button>
-                            <Plus className="mr-2 size-4" />
-                            Send Invite
-                        </Button>
-                    </div>
-                </div>
-            </Card>
-
-            {/* Members Table */}
-            <Card className="overflow-hidden">
-                <div className="border-b p-5">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="font-semibold">
-                                Organization Members
-                            </h2>
-
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Users who have access to this organization.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b bg-muted/30">
-                                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                                    Member
-                                </th>
-
-                                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                                    Role
-                                </th>
-
-                                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                                    Status
-                                </th>
-
-                                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                                    Joined
-                                </th>
-
-                                <th className="w-10 px-4 py-3" />
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {members.map((member) => (
-                                <tr
-                                    key={member.email}
-                                    className="border-b last:border-0 hover:bg-muted/20"
-                                >
-                                    {/* Member */}
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                                {member.initials}
-                                            </div>
-
-                                            <div>
-                                                <p className="font-medium">
-                                                    {member.name}
-                                                </p>
-
-                                                <p className="text-xs text-muted-foreground">
-                                                    {member.email}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    {/* Role */}
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <Shield className="size-4 text-muted-foreground" />
-
-                                            <Badge variant="outline">
-                                                {member.role}
-                                            </Badge>
-                                        </div>
-                                    </td>
-
-                                    {/* Status */}
-                                    <td className="px-6 py-4">
-                                        {member.status === "Active" ? (
-                                            <Badge
-                                                variant="secondary"
-                                                className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50"
-                                            >
-                                                Active
-                                            </Badge>
-                                        ) : (
-                                            <Badge
-                                                variant="secondary"
-                                                className="bg-amber-50 text-amber-700 hover:bg-amber-50"
-                                            >
-                                                Pending
-                                            </Badge>
-                                        )}
-                                    </td>
-
-                                    {/* Joined */}
-                                    <td className="px-6 py-4 text-muted-foreground">
-                                        {member.joined}
-                                    </td>
-
-                                    {/* Actions */}
-                                    <td className="px-4 py-4">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="size-8"
-                                        >
-                                            <MoreHorizontal className="size-4" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-        </div>
+      <Card className="p-6">
+        <h1 className="text-xl font-semibold">Team Members</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Only workspace owners and admins can view the full member list or invite teammates.
+        </p>
+      </Card>
     );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <div className="flex items-center gap-2">
+          <Users aria-hidden="true" className="size-5 text-primary" />
+          <h1 className="text-2xl font-semibold tracking-tight">Team Members</h1>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage access to {activeWorkspace.name}.
+        </p>
+      </header>
+
+      <Card className="p-6">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Mail aria-hidden="true" className="size-5" />
+          </div>
+          <div>
+            <h2 className="font-semibold">Invite a team member</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Invitations expire after seven days. Owners cannot be assigned through an invitation.
+            </p>
+          </div>
+        </div>
+
+        <form
+          className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-end"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setCreatedInvitation(null);
+            invitationMutation.mutate();
+          }}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="invite-email">Email address</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={320}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="colleague@company.com"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="invite-role">Role</Label>
+            <select
+              id="invite-role"
+              value={role}
+              onChange={(event) => setRole(event.target.value as InviteRole)}
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            >
+              <option value="ADMIN">Admin</option>
+              <option value="AGENT">Agent</option>
+              <option value="CUSTOMER">Customer</option>
+            </select>
+          </div>
+          <Button type="submit" disabled={invitationMutation.isPending || !email.trim()}>
+            <Plus aria-hidden="true" className="mr-2 size-4" />
+            {invitationMutation.isPending ? "Sending…" : "Send invite"}
+          </Button>
+        </form>
+
+        {invitationMutation.isError && (
+          <p className="mt-4 text-sm text-destructive" role="alert">
+            {invitationMutation.error.message}
+          </p>
+        )}
+
+        {createdInvitation && (
+          <div className="mt-5 rounded-lg border bg-muted/20 p-4" role="status">
+            <p className="font-medium">
+              {createdInvitation.email_sent
+                ? `Invitation email sent to ${createdInvitation.email}.`
+                : `Invitation created, but email could not be sent to ${createdInvitation.email}.`}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {createdInvitation.email_sent
+                ? "You can also copy the invitation link."
+                : "Share this link directly. Configure SMTP to send invitation emails automatically."}
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <Input aria-label="Invitation link" readOnly value={createdInvitation.invitation_url} />
+              <Button type="button" variant="outline" onClick={() => void copyInvitationLink()}>
+                Copy link
+              </Button>
+            </div>
+            {copyMessage && <p className="mt-2 text-xs text-muted-foreground">{copyMessage}</p>}
+          </div>
+        )}
+      </Card>
+
+      <Card className="overflow-hidden">
+        <div className="border-b p-5">
+          <h2 className="font-semibold">Workspace members</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Current members of {activeWorkspace.name}.
+          </p>
+        </div>
+
+        {membersQuery.isLoading ? (
+          <p className="p-6 text-sm text-muted-foreground" role="status">Loading members…</p>
+        ) : membersQuery.isError ? (
+          <p className="p-6 text-sm text-destructive" role="alert">{membersQuery.error.message}</p>
+        ) : members.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">No members found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/30 text-left text-muted-foreground">
+                  <th className="px-6 py-3 font-medium">Member</th>
+                  <th className="px-6 py-3 font-medium">Role</th>
+                  <th className="px-6 py-3 font-medium">Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((member) => {
+                  const displayName = member.full_name || member.email || "Workspace member";
+                  const initials = displayName.slice(0, 2).toUpperCase();
+                  return (
+                    <tr key={member.user_id} className="border-b last:border-0 hover:bg-muted/20">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                            {initials}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{displayName}</p>
+                            {member.email && (
+                              <p className="max-w-xs truncate text-xs text-muted-foreground" title={member.email}>
+                                {member.email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-2">
+                          <Shield aria-hidden="true" className="size-4 text-muted-foreground" />
+                          <Badge variant="outline">{member.role}</Badge>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {new Date(member.joined_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 }

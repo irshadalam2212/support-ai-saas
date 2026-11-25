@@ -52,7 +52,8 @@ class WorkspaceInvitationResponse(BaseModel):
     status: InvitationStatus
     expires_at: datetime
     created_at: datetime
-    invitation_token: str
+    invitation_url: str
+    email_sent: bool
 
 
 class InvitationDecisionRequest(BaseModel):

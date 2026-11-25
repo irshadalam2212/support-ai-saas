@@ -26,11 +26,46 @@ const workspaceResponseSchema = z.object({
   created_at: z.string().datetime({ offset: true }),
 });
 
+const workspaceMemberSchema = z.object({
+  user_id: z.string().uuid(),
+  email: z.string().nullable(),
+  full_name: z.string().nullable(),
+  role: z.enum(["OWNER", "ADMIN", "AGENT", "CUSTOMER"]),
+  joined_at: z.string().datetime({ offset: true }),
+});
+
+const workspaceInvitationSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  email: z.string().email(),
+  role: z.enum(["ADMIN", "AGENT", "CUSTOMER"]),
+  status: z.enum(["PENDING", "ACCEPTED", "DECLINED", "REVOKED", "EXPIRED"]),
+  expires_at: z.string().datetime({ offset: true }),
+  created_at: z.string().datetime({ offset: true }),
+  invitation_url: z.string().url(),
+  email_sent: z.boolean(),
+});
+
+const invitationDecisionSchema = z.object({
+  invitation_id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  role: z.enum(["ADMIN", "AGENT", "CUSTOMER"]),
+  status: z.enum(["ACCEPTED", "DECLINED"]),
+});
+
 export type FastApiHealth = z.infer<typeof healthResponseSchema>;
 export type CurrentProfile = z.infer<typeof profileResponseSchema>;
 export type WorkspaceSummary = z.infer<typeof workspaceResponseSchema>;
+export type WorkspaceMemberSummary = z.infer<typeof workspaceMemberSchema>;
+export type WorkspaceInvitation = z.infer<typeof workspaceInvitationSchema>;
+export type InvitationDecision = z.infer<typeof invitationDecisionSchema>;
 
-async function workspaceRequest(path: string, accessToken: string, method: "GET" | "POST") {
+async function workspaceRequest(
+  path: string,
+  accessToken: string,
+  method: "GET" | "POST",
+  body?: unknown,
+) {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -38,7 +73,9 @@ async function workspaceRequest(path: string, accessToken: string, method: "GET"
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${accessToken}`,
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       },
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (error) {
     throw new Error("Could not reach SupportAI to load your workspace. Please try again.", { cause: error });
@@ -65,6 +102,53 @@ export async function ensureInitialWorkspace(accessToken: string): Promise<Works
   const result = await workspaceRequest("/workspaces/onboarding", accessToken, "POST");
   const parsed = workspaceResponseSchema.safeParse(result);
   if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  return parsed.data;
+}
+
+export async function getWorkspaceMembers(
+  accessToken: string,
+  workspaceId: string,
+): Promise<WorkspaceMemberSummary[]> {
+  const result = await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}/members`,
+    accessToken,
+    "GET",
+  );
+  const parsed = z.array(workspaceMemberSchema).safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace member list.");
+  return parsed.data;
+}
+
+export async function createWorkspaceInvitation(
+  accessToken: string,
+  workspaceId: string,
+  email: string,
+  role: "ADMIN" | "AGENT" | "CUSTOMER",
+): Promise<WorkspaceInvitation> {
+  const result = await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}/members/invitations`,
+    accessToken,
+    "POST",
+    { email, role },
+  );
+  const parsed = workspaceInvitationSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected invitation response.");
+  return parsed.data;
+}
+
+export async function respondToWorkspaceInvitation(
+  accessToken: string,
+  decision: "accept" | "decline",
+  invitationToken: string,
+): Promise<InvitationDecision> {
+  const result = await workspaceRequest(
+    `/invitations/${decision}`,
+    accessToken,
+    "POST",
+    { invitation_token: invitationToken },
+  );
+  const parsed = invitationDecisionSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected invitation decision response.");
   return parsed.data;
 }
 

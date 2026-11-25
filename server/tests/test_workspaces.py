@@ -1,6 +1,7 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
 import hashlib
+from urllib.parse import parse_qs, urlparse
 from uuid import UUID, uuid4
 
 from httpx import ASGITransport, AsyncClient
@@ -345,11 +346,13 @@ def test_owner_can_invite_member_and_token_is_stored_as_hash():
     assert body["status"] == "PENDING"
     assert body["role"] == "AGENT"
     assert datetime.fromisoformat(body["expires_at"].replace("Z", "+00:00")) > datetime.now(UTC)
-    assert len(body["invitation_token"]) >= 32
+    invitation_token = parse_qs(urlparse(body["invitation_url"]).query)["token"][0]
+    assert len(invitation_token) >= 32
     assert session.invitations[0].token_hash == hashlib.sha256(
-        body["invitation_token"].encode("utf-8")
+        invitation_token.encode("utf-8")
     ).hexdigest()
-    assert session.invitations[0].token_hash != body["invitation_token"]
+    assert session.invitations[0].token_hash != invitation_token
+    assert body["email_sent"] is False
     assert duplicate.status_code == 409
     assert invalid_role.status_code == 422
 

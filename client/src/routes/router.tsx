@@ -21,6 +21,7 @@ import LoginPage from "@/pages/auth/LoginPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPassword";
 import AuthCallbackPage from "@/pages/auth/AuthCallbackPage";
+import InvitationResponsePage from "@/pages/auth/InvitationResponsePage";
 import BackendHealthPage from "@/pages/dev/BackendHealthPage";
 import RequireAuth from "@/components/auth/RequireAuth";
 
@@ -44,6 +45,10 @@ export const router = createBrowserRouter([
     {
         path: "/auth/callback",
         element: <AuthCallbackPage />,
+    },
+    {
+        path: "/invitations/respond",
+        element: <InvitationResponsePage />,
     },
     {
         path: "/reset-password",

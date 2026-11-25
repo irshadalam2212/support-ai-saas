@@ -12,7 +12,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import WorkspaceAccess, get_current_claims, get_workspace_access, require_workspace_role
+from app.core.config import get_settings
 from app.db.session import get_db
+from app.services.email import send_workspace_invitation_email
 from app.models.profile import Profile
 from app.models.workspace import Workspace, WorkspaceInvitation, WorkspaceMember
 from app.schemas.workspace import (
@@ -288,6 +290,18 @@ def create_workspace_invitation(
         ) from error
     db.refresh(invitation)
 
+    invitation_url = (
+        f"{get_settings().frontend_base_url.rstrip('/')}/invitations/respond"
+        f"?token={raw_token}"
+    )
+    email_sent = send_workspace_invitation_email(
+        recipient=invitation.email,
+        workspace_name=access.workspace.name,
+        role=invitation.role,
+        invitation_url=invitation_url,
+        expires_at=invitation.expires_at,
+    )
+
     return WorkspaceInvitationResponse(
         id=invitation.id,
         workspace_id=invitation.workspace_id,
@@ -296,5 +310,6 @@ def create_workspace_invitation(
         status=invitation.status,
         expires_at=invitation.expires_at,
         created_at=invitation.created_at,
-        invitation_token=raw_token,
+        invitation_url=invitation_url,
+        email_sent=email_sent,
     )
