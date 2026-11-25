@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import hashlib
 from uuid import UUID, uuid4
 
@@ -56,12 +56,24 @@ class FakeSession:
             workspace_filter = parameters.get("workspace_id_1")
             email_filter = parameters.get("email_1")
             status_filter = parameters.get("status_1")
+            token_hash_filter = parameters.get("token_hash_1")
             rows = [
                 (invitation,)
                 for invitation in self.invitations
-                if invitation.workspace_id == workspace_filter
-                and invitation.email == email_filter
-                and invitation.status == status_filter
+                if (workspace_filter is None or invitation.workspace_id == workspace_filter)
+                and (email_filter is None or invitation.email == email_filter)
+                and (status_filter is None or invitation.status == status_filter)
+                and (token_hash_filter is None or invitation.token_hash == token_hash_filter)
+            ]
+            return FakeResult(rows)
+
+        if entities == [WorkspaceMember]:
+            parameters = statement.compile().params
+            rows = [
+                (member,)
+                for member in self.members
+                if member.workspace_id == parameters.get("workspace_id_1")
+                and member.user_id == parameters.get("user_id_1")
             ]
             return FakeResult(rows)
 
@@ -367,3 +379,119 @@ def test_agent_cannot_create_workspace_invitation():
 
     assert response.status_code == 403
     assert session.invitations == []
+
+
+def test_invited_user_can_accept_or_decline_matching_invitations():
+    owner_id = uuid4()
+    invitee_id = uuid4()
+    workspace = Workspace(
+        id=uuid4(), name="Acme", slug="acme", created_by=owner_id, created_at=datetime.now(UTC)
+    )
+    profile = Profile(id=invitee_id, email="new.agent@acme.test", full_name="New Agent")
+    accepted_token = "accept-token-value-with-more-than-thirty-two-chars"
+    declined_token = "decline-token-value-with-more-than-thirty-two-chars"
+    session = FakeSession(invitee_id)
+    session.profiles = [profile]
+    session.workspaces.append(workspace)
+    accepted_invitation = WorkspaceInvitation(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        email=profile.email,
+        role="AGENT",
+        token_hash=hashlib.sha256(accepted_token.encode()).hexdigest(),
+        status="PENDING",
+        invited_by=owner_id,
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+        created_at=datetime.now(UTC),
+    )
+    declined_invitation = WorkspaceInvitation(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        email=profile.email,
+        role="CUSTOMER",
+        token_hash=hashlib.sha256(declined_token.encode()).hexdigest(),
+        status="PENDING",
+        invited_by=owner_id,
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+        created_at=datetime.now(UTC),
+    )
+    session.invitations.extend([accepted_invitation, declined_invitation])
+    app.dependency_overrides[get_current_claims] = lambda: {
+        "sub": str(invitee_id),
+        "email": profile.email,
+    }
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def decide():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            accepted = await client.post(
+                "/api/v1/invitations/accept", json={"invitation_token": accepted_token}
+            )
+            declined = await client.post(
+                "/api/v1/invitations/decline", json={"invitation_token": declined_token}
+            )
+            return accepted, declined
+
+    try:
+        accepted, declined = asyncio.run(decide())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert accepted.status_code == 200
+    assert accepted.json()["status"] == "ACCEPTED"
+    assert accepted.json()["role"] == "AGENT"
+    assert declined.status_code == 200
+    assert declined.json()["status"] == "DECLINED"
+    assert len(session.members) == 1
+    assert session.members[0].user_id == invitee_id
+    assert session.members[0].role == "AGENT"
+    assert accepted_invitation.status == "ACCEPTED"
+    assert declined_invitation.status == "DECLINED"
+
+
+def test_invitation_decision_requires_matching_email_and_rejects_expired_token():
+    owner_id = uuid4()
+    invitee_id = uuid4()
+    workspace = Workspace(
+        id=uuid4(), name="Acme", slug="acme", created_by=owner_id, created_at=datetime.now(UTC)
+    )
+    profile = Profile(id=invitee_id, email="right.person@acme.test")
+    token = "expired-token-value-with-more-than-thirty-two-characters"
+    invitation = WorkspaceInvitation(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        email=profile.email,
+        role="AGENT",
+        token_hash=hashlib.sha256(token.encode()).hexdigest(),
+        status="PENDING",
+        invited_by=owner_id,
+        expires_at=datetime.now(UTC) - timedelta(minutes=1),
+        created_at=datetime.now(UTC) - timedelta(days=8),
+    )
+    session = FakeSession(invitee_id)
+    session.profiles = [profile]
+    session.invitations.append(invitation)
+    claims = {"sub": str(invitee_id), "email": "wrong.person@acme.test"}
+    app.dependency_overrides[get_current_claims] = lambda: claims
+    app.dependency_overrides[get_db] = lambda: session
+
+    async def decide():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            wrong_email = await client.post(
+                "/api/v1/invitations/accept", json={"invitation_token": token}
+            )
+            claims["email"] = profile.email
+            expired = await client.post(
+                "/api/v1/invitations/accept", json={"invitation_token": token}
+            )
+            return wrong_email, expired
+
+    try:
+        wrong_email, expired = asyncio.run(decide())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert wrong_email.status_code == 403
+    assert expired.status_code == 410
+    assert invitation.status == "EXPIRED"
+    assert session.members == []

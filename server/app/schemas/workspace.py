@@ -55,6 +55,19 @@ class WorkspaceInvitationResponse(BaseModel):
     invitation_token: str
 
 
+class InvitationDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    invitation_token: str = Field(min_length=32, max_length=128)
+
+
+class InvitationDecisionResponse(BaseModel):
+    invitation_id: UUID
+    workspace_id: UUID
+    role: InvitationRoleName
+    status: Literal["ACCEPTED", "DECLINED"]
+
+
 class WorkspaceUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
