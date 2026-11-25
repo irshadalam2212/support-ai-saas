@@ -17,6 +17,11 @@ const profileResponseSchema = z.object({
   updated_at: z.string().datetime({ offset: true }),
 });
 
+const currentUserResponseSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().nullable(),
+});
+
 const workspaceResponseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -55,6 +60,7 @@ const invitationDecisionSchema = z.object({
 
 export type FastApiHealth = z.infer<typeof healthResponseSchema>;
 export type CurrentProfile = z.infer<typeof profileResponseSchema>;
+export type CurrentUser = z.infer<typeof currentUserResponseSchema>;
 export type WorkspaceSummary = z.infer<typeof workspaceResponseSchema>;
 export type WorkspaceMemberSummary = z.infer<typeof workspaceMemberSchema>;
 export type WorkspaceInvitation = z.infer<typeof workspaceInvitationSchema>;
@@ -63,7 +69,7 @@ export type InvitationDecision = z.infer<typeof invitationDecisionSchema>;
 async function workspaceRequest(
   path: string,
   accessToken: string,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   body?: unknown,
 ) {
   let response: Response;
@@ -100,6 +106,47 @@ export async function getWorkspaces(accessToken: string): Promise<WorkspaceSumma
 
 export async function ensureInitialWorkspace(accessToken: string): Promise<WorkspaceSummary> {
   const result = await workspaceRequest("/workspaces/onboarding", accessToken, "POST");
+  const parsed = workspaceResponseSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  return parsed.data;
+}
+
+export async function getWorkspace(accessToken: string, workspaceId: string): Promise<WorkspaceSummary> {
+  const result = await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}`,
+    accessToken,
+    "GET",
+  );
+  const parsed = workspaceResponseSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  return parsed.data;
+}
+
+export async function createWorkspace(
+  accessToken: string,
+  name: string,
+  description: string,
+): Promise<WorkspaceSummary> {
+  const result = await workspaceRequest("/workspaces", accessToken, "POST", {
+    name,
+    description: description.trim() || null,
+  });
+  const parsed = workspaceResponseSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
+  return parsed.data;
+}
+
+export async function updateWorkspace(
+  accessToken: string,
+  workspaceId: string,
+  updates: { name?: string; description?: string | null },
+): Promise<WorkspaceSummary> {
+  const result = await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}`,
+    accessToken,
+    "PATCH",
+    updates,
+  );
   const parsed = workspaceResponseSchema.safeParse(result);
   if (!parsed.success) throw new Error("FastAPI returned an unexpected workspace response.");
   return parsed.data;
@@ -178,6 +225,51 @@ export async function syncCurrentProfile(accessToken: string): Promise<CurrentPr
   if (!parsed.success) {
     throw new Error("Your account is ready, but FastAPI returned an unexpected profile response.");
   }
+  return parsed.data;
+}
+
+export async function getCurrentProfile(accessToken: string): Promise<CurrentProfile> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/profiles/me`, {
+      method: "GET",
+      headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
+    });
+  } catch (error) {
+    throw new Error("Could not reach SupportAI to load your profile.", { cause: error });
+  }
+
+  const result: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = z.object({ detail: z.string().optional() }).safeParse(result);
+    throw new Error(detail.success && detail.data.detail
+      ? detail.data.detail
+      : `Profile request failed (HTTP ${response.status}).`);
+  }
+  const parsed = profileResponseSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected profile response.");
+  return parsed.data;
+}
+
+export async function getAuthenticatedUser(accessToken: string): Promise<CurrentUser> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
+    });
+  } catch (error) {
+    throw new Error("Could not reach SupportAI to verify the current account.", { cause: error });
+  }
+  const result: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = z.object({ detail: z.string().optional() }).safeParse(result);
+    throw new Error(detail.success && detail.data.detail
+      ? detail.data.detail
+      : `Account request failed (HTTP ${response.status}).`);
+  }
+  const parsed = currentUserResponseSchema.safeParse(result);
+  if (!parsed.success) throw new Error("FastAPI returned an unexpected account response.");
   return parsed.data;
 }
 
