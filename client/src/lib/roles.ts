@@ -21,6 +21,11 @@ export const ROLE_DESCRIPTIONS: Record<WorkspaceRole, string> = {
   CUSTOMER: "Customer access. Cannot change workspace settings or manage members.",
 };
 
+/** Owners, admins, and agents work on support data. The server enforces it. */
+export function isStaff(role: WorkspaceRole | undefined) {
+  return role !== undefined && role !== "CUSTOMER";
+}
+
 /** Mirrors the API rule for editing a workspace and managing its members. The server enforces it. */
 export function canManageWorkspace(role: WorkspaceRole | undefined) {
   return role === "OWNER" || role === "ADMIN";

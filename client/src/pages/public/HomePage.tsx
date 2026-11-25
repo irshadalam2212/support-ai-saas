@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Bot, ChartNoAxesCombined, Inbox, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, BookOpen, Bot, ChartNoAxesCombined, Contact, Inbox, ShieldCheck, Users } from "lucide-react";
 import { Link } from "react-router";
 
 import Logo from "@/components/shared/Logo";
@@ -18,13 +18,18 @@ const currentFeatures = [
     title: "Team invitations",
     description: "Invite teammates, choose their role, and see who has access.",
   },
+  {
+    icon: Contact,
+    title: "Customer records",
+    description: "Keep the contact details of the people your team supports, and find them quickly.",
+  },
 ];
 
 const upcomingFeatures = [
   {
     icon: Inbox,
-    title: "Customer support",
-    description: "Customers, tickets, replies, internal notes, and assignments.",
+    title: "Support tickets",
+    description: "Tickets, replies, internal notes, and assignments.",
   },
   {
     icon: BookOpen,
@@ -88,7 +93,7 @@ export default function LandingPage() {
 
             <Card id="available" className="scroll-mt-20 p-5 sm:p-6">
               <h2 className="font-semibold">Available now</h2>
-              <p className="mt-0.5 text-muted-foreground">Workspace and team management</p>
+              <p className="mt-0.5 text-muted-foreground">Workspaces, teams, and customers</p>
               <ul className="mt-5 space-y-3">
                 {currentFeatures.map(({ icon: Icon, title, description }) => (
                   <li key={title} className="flex gap-3 rounded-lg border p-4">
@@ -130,7 +135,7 @@ export default function LandingPage() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span>© 2026 SupportAI</span>
-          <span>Workspace and team management are available now. Support features are in development.</span>
+          <span>Workspace, team, and customer management are available now. Ticketing is in development.</span>
         </div>
       </footer>
     </div>

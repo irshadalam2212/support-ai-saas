@@ -37,6 +37,7 @@ const groups: NavGroup[] = [
     label: "Workspace",
     items: [
       { ...item("Overview", "/overview", LayoutDashboard), isActive: (pathname) => pathname === "/overview" },
+      item("Customers", "/customers", Users, STAFF),
       // Team members is a tab inside Settings.
       item("Settings", "/settings", Settings),
     ],
@@ -45,7 +46,6 @@ const groups: NavGroup[] = [
     label: "Coming soon",
     items: [
       item("Conversations", "/conversations", Inbox, STAFF),
-      item("Customers", "/customers", Users, STAFF),
       item("Knowledge base", "/knowledge-base", BookOpen, STAFF),
       item("AI assistant", "/assistant", Bot, STAFF),
       item("Analytics", "/analytics", ChartNoAxesCombined, STAFF),

@@ -76,7 +76,8 @@ export type WorkspaceInvitation = z.infer<typeof workspaceInvitationSchema>;
 export type InvitationDecision = z.infer<typeof invitationDecisionSchema>;
 export type InvitationPreview = z.infer<typeof invitationPreviewSchema>;
 
-async function workspaceRequest(
+/** Sends a JSON request to the API and returns the unvalidated response body. */
+export async function apiRequest(
   path: string,
   /** Null only for endpoints that are public. */
   accessToken: string | null,
@@ -101,7 +102,7 @@ async function workspaceRequest(
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     throw new ApiError(
-      getErrorDetail(result) ?? `Workspace request failed (HTTP ${response.status}).`,
+      getErrorDetail(result) ?? `Request failed (HTTP ${response.status}).`,
       response.status,
     );
   }
@@ -109,21 +110,21 @@ async function workspaceRequest(
 }
 
 export async function getWorkspaces(accessToken: string): Promise<WorkspaceSummary[]> {
-  const result = await workspaceRequest("/workspaces", accessToken, "GET");
+  const result = await apiRequest("/workspaces", accessToken, "GET");
   const parsed = z.array(workspaceResponseSchema).safeParse(result);
   if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace list.");
   return parsed.data;
 }
 
 export async function ensureInitialWorkspace(accessToken: string): Promise<WorkspaceSummary> {
-  const result = await workspaceRequest("/workspaces/onboarding", accessToken, "POST");
+  const result = await apiRequest("/workspaces/onboarding", accessToken, "POST");
   const parsed = workspaceResponseSchema.safeParse(result);
   if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace response.");
   return parsed.data;
 }
 
 export async function getWorkspace(accessToken: string, workspaceId: string): Promise<WorkspaceSummary> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}`,
     accessToken,
     "GET",
@@ -138,7 +139,7 @@ export async function createWorkspace(
   name: string,
   description: string,
 ): Promise<WorkspaceSummary> {
-  const result = await workspaceRequest("/workspaces", accessToken, "POST", {
+  const result = await apiRequest("/workspaces", accessToken, "POST", {
     name,
     description: description.trim() || null,
   });
@@ -152,7 +153,7 @@ export async function updateWorkspace(
   workspaceId: string,
   updates: { name?: string; description?: string | null },
 ): Promise<WorkspaceSummary> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}`,
     accessToken,
     "PATCH",
@@ -167,7 +168,7 @@ export async function getWorkspaceMembers(
   accessToken: string,
   workspaceId: string,
 ): Promise<WorkspaceMemberSummary[]> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}/members`,
     accessToken,
     "GET",
@@ -183,7 +184,7 @@ export async function updateWorkspaceMemberRole(
   userId: string,
   role: "ADMIN" | "AGENT" | "CUSTOMER",
 ): Promise<WorkspaceMemberSummary> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}`,
     accessToken,
     "PATCH",
@@ -199,7 +200,7 @@ export async function removeWorkspaceMember(
   workspaceId: string,
   userId: string,
 ): Promise<void> {
-  await workspaceRequest(
+  await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}`,
     accessToken,
     "DELETE",
@@ -212,7 +213,7 @@ export async function transferWorkspaceOwnership(
   workspaceId: string,
   userId: string,
 ): Promise<WorkspaceSummary> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}/transfer-ownership`,
     accessToken,
     "POST",
@@ -228,7 +229,7 @@ export async function createWorkspaceInvitation(
   email: string,
   role: "ADMIN" | "AGENT" | "CUSTOMER",
 ): Promise<WorkspaceInvitation> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/workspaces/${encodeURIComponent(workspaceId)}/members/invitations`,
     accessToken,
     "POST",
@@ -241,7 +242,7 @@ export async function createWorkspaceInvitation(
 
 /** Public: the invitation token is the only credential needed. */
 export async function previewWorkspaceInvitation(invitationToken: string): Promise<InvitationPreview> {
-  const result = await workspaceRequest("/invitations/preview", null, "POST", {
+  const result = await apiRequest("/invitations/preview", null, "POST", {
     invitation_token: invitationToken,
   });
   const parsed = invitationPreviewSchema.safeParse(result);
@@ -254,7 +255,7 @@ export async function respondToWorkspaceInvitation(
   decision: "accept" | "decline",
   invitationToken: string,
 ): Promise<InvitationDecision> {
-  const result = await workspaceRequest(
+  const result = await apiRequest(
     `/invitations/${decision}`,
     accessToken,
     "POST",
