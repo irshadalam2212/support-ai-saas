@@ -11,19 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createWorkspaceInvitation } from "@/lib/fastapi.api";
-import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/roles";
+import { ASSIGNABLE_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS, type AssignableRole } from "@/lib/roles";
 
-type InviteRole = "ADMIN" | "AGENT" | "CUSTOMER";
-
-/** Ownership cannot be granted through an invitation. */
-const INVITE_ROLES: InviteRole[] = ["ADMIN", "AGENT", "CUSTOMER"];
-const ROLE_ITEMS = INVITE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }));
+const ROLE_ITEMS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }));
 
 export default function InviteMemberSection({ workspaceId }: { workspaceId: string }) {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<InviteRole>("AGENT");
+  const [role, setRole] = useState<AssignableRole>("AGENT");
 
   const invitationMutation = useMutation({
     mutationFn: () => createWorkspaceInvitation(session!.access_token, workspaceId, email.trim(), role),

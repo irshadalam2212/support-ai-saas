@@ -71,7 +71,7 @@ export type InvitationDecision = z.infer<typeof invitationDecisionSchema>;
 async function workspaceRequest(
   path: string,
   accessToken: string,
-  method: "GET" | "POST" | "PATCH",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown,
 ) {
   let response: Response;
@@ -165,6 +165,51 @@ export async function getWorkspaceMembers(
   );
   const parsed = z.array(workspaceMemberSchema).safeParse(result);
   if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace member list.");
+  return parsed.data;
+}
+
+export async function updateWorkspaceMemberRole(
+  accessToken: string,
+  workspaceId: string,
+  userId: string,
+  role: "ADMIN" | "AGENT" | "CUSTOMER",
+): Promise<WorkspaceMemberSummary> {
+  const result = await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}`,
+    accessToken,
+    "PATCH",
+    { role },
+  );
+  const parsed = workspaceMemberSchema.safeParse(result);
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace member response.");
+  return parsed.data;
+}
+
+export async function removeWorkspaceMember(
+  accessToken: string,
+  workspaceId: string,
+  userId: string,
+): Promise<void> {
+  await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}`,
+    accessToken,
+    "DELETE",
+  );
+}
+
+/** Makes an admin the owner. Returns the workspace with the caller's new role. */
+export async function transferWorkspaceOwnership(
+  accessToken: string,
+  workspaceId: string,
+  userId: string,
+): Promise<WorkspaceSummary> {
+  const result = await workspaceRequest(
+    `/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}/transfer-ownership`,
+    accessToken,
+    "POST",
+  );
+  const parsed = workspaceResponseSchema.safeParse(result);
+  if (!parsed.success) throw new Error("SupportAI returned an unexpected workspace response.");
   return parsed.data;
 }
 

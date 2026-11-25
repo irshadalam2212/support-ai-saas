@@ -15,4 +15,4 @@ Set `VITE_FASTAPI_BASE_URL` in `client/.env.local` if FastAPI runs at a differen
 
 ## Current implementation
 
-Supabase Auth, profile synchronization, workspace creation and switching, workspace settings, member listing, and invitation create/respond flows are implemented. The frontend is connected to these endpoints. Customer and ticket workflows, knowledge ingestion, RAG, AI agents, analytics, and billing integrations remain future work. Areas without backend support are labeled in the UI rather than showing sample records as live data.
+Supabase Auth, profile synchronization, workspace creation and switching, workspace settings, member listing, role changes, member removal, ownership transfer, and invitation create/respond flows are implemented. The frontend is connected to these endpoints. Customer and ticket workflows, knowledge ingestion, RAG, AI agents, analytics, and billing integrations remain future work. Areas without backend support are labeled in the UI rather than showing sample records as live data.
