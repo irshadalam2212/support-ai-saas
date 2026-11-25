@@ -7,6 +7,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import build_sqlalchemy_url
 from app.models import profile  # noqa: F401
+from app.models import support  # noqa: F401
 from app.models import workspace  # noqa: F401
 
 # Import model modules here as they are added so Alembic can discover their tables.

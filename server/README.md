@@ -66,6 +66,9 @@ Alembic uses the SQLAlchemy models and the same psycopg/TLS URL handling. The mi
 - `public.workspace_invitations`, linked to a workspace and inviter profile, with a hashed token, invited email, role, status, expiry, and creation timestamp. A partial unique index prevents multiple pending invitations for the same workspace/email; ownership cannot be granted through invitations.
 
 - `0004_restricted_roles` removes direct browser writes, protects `alembic_version`, and creates the `supportai_app` role for the API.
+- `0005_customers_and_tickets` (PostgreSQL 15 or newer) adds `public.customers`, `public.tickets`, `public.ticket_messages`, and `public.ticket_events`, plus a per-workspace ticket counter. No endpoints use them yet.
+
+The support tables are workspace-owned. Their foreign keys include `workspace_id`, so a row cannot refer to another workspace's customer, member, or ticket. Browser roles have no access at all. Row Level Security limits the `supportai_app` role to the workspace chosen with `app.db.workspace_context.use_workspace`, which must be called only after checking membership; with no workspace chosen it sees no rows. The API role cannot delete tickets, messages, or history, or edit messages and history. A connection as the table owner is not limited by these policies.
 
 Profiles are user-owned. Workspaces are tenant roots, and memberships and invitations are scoped to a workspace. RLS limits authenticated Supabase reads to the user's own profile, member workspaces, and permitted membership rows. After migration `0004`, the browser cannot write to any application table and has no access to invitation rows; all changes go through FastAPI. FastAPI must still scope every operation to the verified JWT subject because its direct database connection does not automatically carry that user's JWT.
 
